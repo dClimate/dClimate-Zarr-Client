@@ -2,8 +2,10 @@ import datetime
 import typing
 
 import numpy as np
+import pandas as pd
 import xarray as xr
-from shapely.geometry import MultiPolygon, shape
+import shapely
+from shapely.geometry import Polygon, MultiPolygon, shape
 
 from dclimate_zarr_client.dclimate_zarr_errors import InvalidAggregationMethodError, InvalidTimePeriodError
 
@@ -132,14 +134,14 @@ def get_points_in_rectangle(
 
 def get_points_in_polygons(
     ds: xr.Dataset,
-    polygons_mask: typing.List[MultiPolygon],
+    polygons_mask: pd.Series(shapely.geometry.Polygon),
     epsg_crs: int,
 ) -> xr.Dataset:
     """Subsets dataset to points within arbitrary shape. Requires rioxarray to be installed
 
     Args:
         ds (xr.Dataset): dataset to subset
-        polygons_mask (typing.List[MultiPolygon]): list of polygons defining shape
+        polygons_mask (pd.Series(Polygon)): list of polygons defining shape
         epsg_crs (int): epsg code for polygons_mask (see https://en.wikipedia.org/wiki/EPSG_Geodetic_Parameter_Dataset)
 
     Returns:
@@ -169,7 +171,7 @@ def get_data_in_time_range(
 
 def reduce_polygon_to_point(
     ds: xr.Dataset,
-    polygons_mask: typing.List[MultiPolygon]
+    polygon_mask: pd.Series(shapely.geometry.Polygon),
 ) -> xr.Dataset:
     """Subsets data to a representative point approximately at the center of an arbitrary shape.
         Note that this point will always be within the shape, even if the exact center is not.
@@ -177,13 +179,13 @@ def reduce_polygon_to_point(
 
     Args:
         ds (xr.Dataset): dataset to subset
-        polygons_mask (typing.List[MultiPolygon]): list of polygons defining shape
+        polygons_mask (shapely.geometry.Polygon): polygon defining shape
 
     Returns:
         xr.Dataset: subsetted dataset
     """
-    pt = MultiPolygon(polygons_mask).representative_point()
-    ds = get_single_point(ds=ds, latitude=pt.y, longitude=pt.x)
+    pt = MultiPolygon(polygon_mask).representative_point()
+    ds = ds.sel(latitude=pt.y, longitude=pt.x, method="nearest")
     return ds
 
 
@@ -210,8 +212,9 @@ def rolling_aggregation(
     # Aggregate by the specified method over the specified rolling window length
     rolled = ds.rolling(time=window_size)
     aggregator = getattr(xr.core.rolling.DataArrayRolling, agg_method)
-    rolled_agg_values = aggregator(rolled).dropna("time") # remove NAs at beginning/end of array where window size is not large enough to compute a value
-    return rolled_agg_values
+    rolled_agg = aggregator(rolled).dropna("time") # remove NAs at beginning/end of array where window size is not large enough to compute a value
+    
+    return rolled_agg
 
 
 def temporal_aggregation(
