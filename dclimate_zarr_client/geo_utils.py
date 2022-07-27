@@ -3,8 +3,30 @@ import typing
 
 import numpy as np
 import xarray as xr
-from shapely.geometry import MultiPolygon
+from shapely.geometry import MultiPolygon, shape
 
+from dclimate_zarr_client.dclimate_zarr_errors import InvalidAggregationMethodError, InvalidTimePeriodError
+
+
+def _check_input_parameters(time_period = None, agg_method = None):
+    """Checks whether input parameters align with permitted time periods and aggregation methods
+    
+    Args:
+        time_period (str, optional): a string specifying the time period to resample a dataset by
+        agg_method (str, optional): a string specifying the aggregation method to use on a dataset
+
+    Raises:
+        InvalidTimePeriodError: Raised when the specified time period is not accepted
+        InvalidAggregationMethodError: Raised when the specified aggregation method is not accepted
+    """
+    if time_period and time_period not in ["hour", "day", "week", "month", "quarter", "year", "all"]:
+        raise InvalidTimePeriodError(
+            f"Specified time period {time_period} not among permitted periods: 'hour', 'day', 'week', 'month', 'quarter', 'year', 'all'"
+        )
+    if agg_method and agg_method not in ["min", "max", "median", "mean", "std", "sum"]:
+        raise InvalidAggregationMethodError(
+            f"Specified method {agg_method} not among permitted methods: 'min', 'max', 'median', 'mean', 'std', 'sum'"
+        )
 
 def get_single_point(ds: xr.Dataset, latitude: float, longitude: float) -> np.ndarray:
     """Gets array corresponding to the full time series for a single point in a dataset
@@ -144,6 +166,82 @@ def get_data_in_time_range(
     """
     return ds.sel(time=slice(str(start_time), str(end_time)))
 
+
+def reduce_polygon_to_point(
+    ds: xr.Dataset,
+    polygons_mask: typing.List[MultiPolygon]
+) -> xr.Dataset:
+    """Subsets data to a representative point approximately at the center of an arbitrary shape.
+        Note that this point will always be within the shape, even if the exact center is not.
+        NOTE a more involved alternative would be to return the average for values in the entire polygon at this point
+
+    Args:
+        ds (xr.Dataset): dataset to subset
+        polygons_mask (typing.List[MultiPolygon]): list of polygons defining shape
+
+    Returns:
+        xr.Dataset: subsetted dataset
+    """
+    pt = MultiPolygon(polygons_mask).representative_point()
+    ds = get_single_point(ds=ds, latitude=pt.y, longitude=pt.x)
+    return ds
+
+
+def rolling_aggregation(
+    ds: xr.Dataset,
+    window_size: int,
+    agg_method: str,
+) -> np.ndarray:
+    """Creates a rolling aggregate of data values along a dataset's "time" dimension. 
+        The size of the window and the aggregation method are specified by the user.
+        Method must be one of "min", "max", "median", "mean", "std", or "sum".
+
+    Args:
+        ds (xr.Dataset): dataset to subset
+        window_size (int): size of rolling window to apply
+        method (str): method to aggregate by
+
+    Returns:
+        np.ndarray: time series array
+    """
+    _check_input_parameters(agg_method=agg_method)
+    if agg_method not in ["min", "max", "median", "mean", "std", "sum"]:
+        raise InvalidAggregationMethodError
+    # Aggregate by the specified method over the specified rolling window length
+    rolled = ds.rolling(time=window_size)
+    aggregator = getattr(xr.core.rolling.DataArrayRolling, agg_method)
+    rolled_agg_values = aggregator(rolled).dropna("time") # remove NAs at beginning/end of array where window size is not large enough to compute a value
+    return rolled_agg_values
+
+
+def temporal_aggregation(
+    ds: xr.Dataset,
+    time_period: str,
+    agg_method: str,
+    time_unit: int = 1,
+) -> np.ndarray:
+    """Subsets data to the average per specified time period.
+
+    Args:
+        ds (xr.Dataset): dataset to subset
+        time_unit (int): number of time periods to aggregate by. Defaults to 1. Ignored if "all" time periods specified.
+        time_period (str): time period to aggregate by, parsed into DateOffset objects as per https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects
+        method (str): method to aggregate by
+
+    Returns:
+        np.ndarray: time series array
+    """
+    _check_input_parameters(time_period=time_period, agg_method=agg_method)
+    period_strings = {"hour" : f"{time_unit}H", "day" : f"{time_unit}D", "week" : f"{time_unit}W", "month" : f"{time_unit}M", \
+        "quarter" : f"{time_unit}Q", "year" : f"{time_unit}Y", "all" : f"{len(set(ds.time.dt.year.values))}Y"}
+    # Resample by the specified time period and aggregate by the specified method
+    resampled = ds.resample(time=period_strings[time_period])
+    aggregator = getattr(xr.core.resample.DataArrayResample, agg_method)
+    resampled_agg = aggregator(resampled)
+
+    return resampled_agg
+    
+    
 
 """
 Spatial aggregations to a single point, as well as full queries

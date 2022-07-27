@@ -8,7 +8,7 @@ import typing
 import numpy as np
 import xarray as xr
 
-from .dclimate_zarr_errors import SelectionTooLargeError
+from .dclimate_zarr_errors import SelectionTooLargeError, InvalidAggregationMethodError, InvalidTimePeriodError
 from .geo_utils import (
     get_data_in_time_range,
     # get_single_point,
@@ -38,7 +38,6 @@ def _check_dataset_size(ds: xr.Dataset, point_limit: int = DEFAULT_POINT_LIMIT):
         raise SelectionTooLargeError(
             f"Selection of ~ {num_points} data points is more than limit of {point_limit}"
         )
-
 
 def circle_query(
     ipns_name_hash: str,

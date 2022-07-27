@@ -21,3 +21,21 @@ def test_get_points_in_circle(input_ds):
     assert float(ds.latitude.max()) == 40.25
     assert float(ds.longitude.min()) == -120.5
     assert float(ds.longitude.max()) == -119.5
+
+def test_rolling_aggregation(input_ds):
+    mean_vals = geo_utils.rolling_aggregation(input_ds, 5, "mean")
+    assert mean_vals["u100"].values[0][0][0] == 7.912628173828125
+    max_vals = geo_utils.rolling_aggregation(input_ds, 5, "max")
+    assert max_vals["u100"].values[0][0][0] == 8.5950927734375
+    std_vals = geo_utils.rolling_aggregation(input_ds, 5, "std")
+    assert std_vals["u100"].values[0][0][0] == 0.5272848606109619
+
+
+def test_temporal_aggregation(input_ds):
+    # [0][0][0] returns the first value for latitude 45.0, longitue -140.0 
+    daily_maxs = geo_utils.temporal_aggregation(input_ds, time_period="day", agg_method="max", time_unit = 2)
+    assert float(daily_maxs["u100"].values[0][0][0]) == 8.5950927734375
+    monthly_means = geo_utils.temporal_aggregation(input_ds, time_period="month", agg_method="mean")
+    assert float(monthly_means["u100"].values[0][0][0]) == -0.19848433136940002
+    yearly_std = geo_utils.temporal_aggregation(input_ds, time_period="year", agg_method="std")
+    assert float(yearly_std["u100"].values[0][0][0]) == 6.490322113037109
