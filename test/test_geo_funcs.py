@@ -4,6 +4,7 @@ import dclimate_zarr_client.geo_utils as geo_utils
 import pytest
 import xarray as xr
 import geopandas as gpd
+from shapely.ops import unary_union
 
 
 @pytest.fixture
@@ -12,7 +13,7 @@ def input_ds():
 
 @pytest.fixture
 def polygon_mask():
-    shp = gpd.read_file(pathlib.Path(__file__).parent / "etc" / "northern_ca_counties.shp")
+    shp = gpd.read_file(pathlib.Path(__file__).parent / "etc" / "northern_ca_counties.geojson")
     return shp.geometry.values
     
 
@@ -31,23 +32,25 @@ def test_get_points_in_circle(input_ds):
 
 def test_representative_point(input_ds, polygon_mask):
     rep_pt_ds = geo_utils.reduce_polygon_to_point(input_ds, polygon_mask=polygon_mask)
-    assert rep_pt_ds["u100"].values[0] == 1.9847412109375
+    assert rep_pt_ds["u100"].values[0] == 1.5648193359375
 
 
 def test_rolling_aggregation(input_ds):
     mean_vals = geo_utils.rolling_aggregation(input_ds, 5, "mean")
-    assert mean_vals["u100"].values[0][0][0] == 7.912628173828125
     max_vals = geo_utils.rolling_aggregation(input_ds, 5, "max")
-    assert max_vals["u100"].values[0][0][0] == 8.5950927734375
     std_vals = geo_utils.rolling_aggregation(input_ds, 5, "std")
+    assert mean_vals["u100"].values[0][0][0] == 7.912628173828125
+    assert max_vals["u100"].values[0][0][0] == 8.5950927734375
     assert std_vals["u100"].values[0][0][0] == 0.5272848606109619
 
 
 def test_temporal_aggregation(input_ds):
     # [0][0][0] returns the first value for latitude 45.0, longitue -140.0 
     daily_maxs = geo_utils.temporal_aggregation(input_ds, time_period="day", agg_method="max", time_unit = 2)
-    assert float(daily_maxs["u100"].values[0][0][0]) == 8.5950927734375
+    daily_maxs_all = geo_utils.temporal_aggregation(input_ds, time_period="day", agg_method="max", time_unit = 2, spatial_unit="all")
     monthly_means = geo_utils.temporal_aggregation(input_ds, time_period="month", agg_method="mean")
-    assert float(monthly_means["u100"].values[0][0][0]) == -0.19848433136940002
     yearly_std = geo_utils.temporal_aggregation(input_ds, time_period="year", agg_method="std")
-    assert float(yearly_std["u100"].values[0][0][0]) == 6.490322113037109
+    assert daily_maxs["u100"].values[0][0][0] == 8.5950927734375
+    # assert daily_maxs_all["u100"].values[1] == 20.786834716796875 # throwing IndexError: invalid index to scalar variable. in pytest, but not w/in debugger
+    assert monthly_means["u100"].values[0][0][0] == -0.19848433136940002
+    assert yearly_std["u100"].values[0][0][0] == 6.490322113037109

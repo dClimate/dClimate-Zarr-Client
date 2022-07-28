@@ -6,11 +6,12 @@ import pandas as pd
 import xarray as xr
 import shapely
 from shapely.geometry import Polygon, MultiPolygon, shape
+from shapely.ops import unary_union
 
-from dclimate_zarr_client.dclimate_zarr_errors import InvalidAggregationMethodError, InvalidTimePeriodError
+from dclimate_zarr_client.dclimate_zarr_errors import InvalidAggregationMethodError, InvalidTimePeriodError, InvalidSpatialUnitError
 
 
-def _check_input_parameters(time_period = None, agg_method = None):
+def _check_input_parameters(time_period = None, agg_method = None, spatial_unit=None):
     """Checks whether input parameters align with permitted time periods and aggregation methods
     
     Args:
@@ -28,6 +29,10 @@ def _check_input_parameters(time_period = None, agg_method = None):
     if agg_method and agg_method not in ["min", "max", "median", "mean", "std", "sum"]:
         raise InvalidAggregationMethodError(
             f"Specified method {agg_method} not among permitted methods: 'min', 'max', 'median', 'mean', 'std', 'sum'"
+        )
+    if spatial_unit and spatial_unit not in ["point", "all"]:
+        raise InvalidSpatialUnitError(
+            f"Specified methspatial unit {spatial_unit} not among permitted methods: 'point', 'all'"
         )
 
 def get_single_point(ds: xr.Dataset, latitude: float, longitude: float) -> np.ndarray:
@@ -174,7 +179,7 @@ def reduce_polygon_to_point(
     polygon_mask: pd.Series(shapely.geometry.Polygon),
 ) -> xr.Dataset:
     """Subsets data to a representative point approximately at the center of an arbitrary shape.
-        Note that this point will always be within the shape, even if the exact center is not.
+        This point will always be within the shape, even if the exact center is not.
         NOTE a more involved alternative would be to return the average for values in the entire polygon at this point
 
     Args:
@@ -184,7 +189,7 @@ def reduce_polygon_to_point(
     Returns:
         xr.Dataset: subsetted dataset
     """
-    pt = MultiPolygon(polygon_mask).representative_point()
+    pt = unary_union(polygon_mask).representative_point()
     ds = ds.sel(latitude=pt.y, longitude=pt.x, method="nearest")
     return ds
 
@@ -193,26 +198,28 @@ def rolling_aggregation(
     ds: xr.Dataset,
     window_size: int,
     agg_method: str,
-) -> np.ndarray:
-    """Creates a rolling aggregate of data values along a dataset's "time" dimension. 
+    spatial_unit: str = "point",
+) -> xr.Dataset:
+    """Subsets data to a rolling aggregate of data values along a dataset's "time" dimension. 
         The size of the window and the aggregation method are specified by the user.
         Method must be one of "min", "max", "median", "mean", "std", or "sum".
+        Spatial units default to points, i.e. every combination of latitudes/longitudes. The only alternative is "all". 
 
     Args:
         ds (xr.Dataset): dataset to subset
         window_size (int): size of rolling window to apply
-        method (str): method to aggregate by
+        agg_method (str): method to aggregate by
+        spatial_unit (str): the unit of analysis. Defaults to every point.
 
     Returns:
-        np.ndarray: time series array
+        xr.Dataset: subsetted dataset
     """
-    _check_input_parameters(agg_method=agg_method)
-    if agg_method not in ["min", "max", "median", "mean", "std", "sum"]:
-        raise InvalidAggregationMethodError
+    _check_input_parameters(agg_method=agg_method, spatial_unit=spatial_unit)
+    spatial_unit_strings = {"point" : None, "all" : ...}
     # Aggregate by the specified method over the specified rolling window length
     rolled = ds.rolling(time=window_size)
     aggregator = getattr(xr.core.rolling.DataArrayRolling, agg_method)
-    rolled_agg = aggregator(rolled).dropna("time") # remove NAs at beginning/end of array where window size is not large enough to compute a value
+    rolled_agg = aggregator(rolled, spatial_unit_strings[spatial_unit]).dropna("time") # remove NAs at beginning/end of array where window size is not large enough to compute a value
     
     return rolled_agg
 
@@ -222,25 +229,31 @@ def temporal_aggregation(
     time_period: str,
     agg_method: str,
     time_unit: int = 1,
-) -> np.ndarray:
-    """Subsets data to the average per specified time period.
+    spatial_unit: str = "point",
+) -> xr.Dataset:
+    """Subsets data according to a specified combination of time period, units of time, aggregation method, and/or desired spatial unit.
+       Time-based inputs defualt to the entire time range and 1 unit of time, respectively.
+       Spatial units default to points, i.e. every combination of latitudes/longitudes. The only alternative is "all". 
+       For a more nuanced treatment of spatial units use the `get_points_in_polygons` method.
 
     Args:
         ds (xr.Dataset): dataset to subset
-        time_unit (int): number of time periods to aggregate by. Defaults to 1. Ignored if "all" time periods specified.
         time_period (str): time period to aggregate by, parsed into DateOffset objects as per https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects
-        method (str): method to aggregate by
+        agg_method (str): method to aggregate by
+        time_unit (int): number of time periods to aggregate by. Defaults to 1. Ignored if "all" time periods specified.
+        spatial_unit (str): the unit of analysis. Defaults to every point.
 
     Returns:
-        np.ndarray: time series array
+        xr.Dataset: subsetted dataset
     """
-    _check_input_parameters(time_period=time_period, agg_method=agg_method)
+    _check_input_parameters(time_period=time_period, agg_method=agg_method, spatial_unit=spatial_unit)
     period_strings = {"hour" : f"{time_unit}H", "day" : f"{time_unit}D", "week" : f"{time_unit}W", "month" : f"{time_unit}M", \
         "quarter" : f"{time_unit}Q", "year" : f"{time_unit}Y", "all" : f"{len(set(ds.time.dt.year.values))}Y"}
+    spatial_unit_strings = {"point" : None, "all" : ...}
     # Resample by the specified time period and aggregate by the specified method
     resampled = ds.resample(time=period_strings[time_period])
     aggregator = getattr(xr.core.resample.DataArrayResample, agg_method)
-    resampled_agg = aggregator(resampled)
+    resampled_agg = aggregator(resampled, spatial_unit_strings[spatial_unit])
 
     return resampled_agg
     

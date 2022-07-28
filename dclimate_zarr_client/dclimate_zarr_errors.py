@@ -25,3 +25,8 @@ class InvalidTimePeriodError(ZarrClientError):
     """Raised when user provides a time period outside of [hour, day, week, month, quarter, year]"""
 
     pass
+
+class InvalidSpatialUnitError(ZarrClientError):
+    """Raised when user provides a spatial unit outside of [point, all]"""
+
+    pass
