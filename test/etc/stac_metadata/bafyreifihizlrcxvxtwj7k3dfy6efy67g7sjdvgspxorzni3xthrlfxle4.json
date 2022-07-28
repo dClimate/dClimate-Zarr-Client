@@ -1,0 +1,77 @@
+{
+    "assets": {
+        "analytic": {
+            "href": {
+                "/": "bafyreicbu5gbtj5kgyzf2qmsvqhlog7fj5yrnksjqmkqmcinn2yrcsaynq"
+            },
+            "roles": [
+                "data"
+            ],
+            "title": "era5_wind_100m_u",
+            "type": "application/zarr"
+        }
+    },
+    "bbox": [
+        -90,
+        35,
+        -140,
+        45
+    ],
+    "collection": "ERA5",
+    "geometry": "{\"type\": \"Polygon\", \"coordinates\": [[[-90.0, 35.0], [-90.0, 45.0], [-140.0, 45.0], [-140.0, 35.0], [-90.0, 35.0]]]}",
+    "id": "era5_wind_100m_u",
+    "links": [
+        {
+            "href": "k2k4r8n8bcg1lnzax8g5xwd799m9xs8645xnvkbxxdhw8p84xdsrn9fp",
+            "rel": "parent",
+            "title": "era5_wind_100m_u",
+            "type": "application/json"
+        },
+        {
+            "href": {
+                "/": "bafyreiccejigv2gura4mqitpnrfg2moarvjx4jrcgkompqeuzpejhtc4ra"
+            },
+            "metadata href": {
+                "/": "bafyreieker5cwplgsz3wdoeuwhsbcoqajri5dz5jrzxayw5qzaafd3z5ay"
+            },
+            "rel": "previous",
+            "title": "era5_wind_100m_u",
+            "type": "application/json"
+        },
+        {
+            "href": "k2k4r8niyotlqqqvqoh7jr4gp6zp0b0975k88zmak151chv87w2p11qz",
+            "rel": "self",
+            "title": "era5_wind_100m_u metadata",
+            "type": "application/json"
+        }
+    ],
+    "properties": {
+        "CF convention": "CF-1.6",
+        "Fill value": -9999,
+        "Zarr chunk size": {
+            "latitude": 16,
+            "longitude": 16,
+            "time": 50
+        },
+        "climate variable": "wind 100m u-component",
+        "dataset description": "PRISM climate datasets incorporate a variety of modeling techniques and are available at multiple spatial/temporal resolutions, covering the period from 1895 to the present. The grid cells analyzed are the standard PRISM 4km\nRather than calculating days based on the 24-hour period ending at midnight local time, PRISM defines a 'day' as the 24 hours ending at 12:00 Greenwich Mean Time (GMT, or 7:00am Eastern Standard Time). This means that PRISM data for May 26, for example, actually refers to the 24 hours ending at 7:00am EST on May 26.\nMore dataset information at https://confluence.ecmwf.int/display/CKB/ERA5%3A+data+documentation\nMore information about reduced Gaussian Grids at  https://confluence.ecmwf.int/display/CKB/ERA5%3A+What+is+the+spatial+reference",
+        "date range": [
+            "2022021600",
+            "2022022123"
+        ],
+        "dtype": "float32",
+        "end_datetime": "2022-02-21T23:00:00Z",
+        "spatial resolution": 0.25,
+        "start_datetime": "2022-02-09T00:00:00Z",
+        "tags": [
+            "Wind"
+        ],
+        "temporal resolution": "hourly",
+        "unit of measurement": "m / s",
+        "update cadence": "daily",
+        "updated": "2022-07-26T19:19:40Z"
+    },
+    "stac_extension": "datacube",
+    "stac_version": "1.0.0",
+    "type": "Feature"
+}
