@@ -47,10 +47,15 @@ def test_rolling_aggregation(input_ds):
 def test_temporal_aggregation(input_ds):
     # [0][0][0] returns the first value for latitude 45.0, longitue -140.0 
     daily_maxs = geo_utils.temporal_aggregation(input_ds, time_period="day", agg_method="max", time_unit = 2)
-    daily_maxs_all = geo_utils.temporal_aggregation(input_ds, time_period="day", agg_method="max", time_unit = 2, spatial_unit="all")
     monthly_means = geo_utils.temporal_aggregation(input_ds, time_period="month", agg_method="mean")
     yearly_std = geo_utils.temporal_aggregation(input_ds, time_period="year", agg_method="std")
     assert daily_maxs["u100"].values[0][0][0] == 8.5950927734375
-    # assert daily_maxs_all["u100"].values[1] == 20.786834716796875 # throwing IndexError: invalid index to scalar variable. in pytest, but not w/in debugger
     assert monthly_means["u100"].values[0][0][0] == -0.19848433136940002
     assert yearly_std["u100"].values[0][0][0] == 6.490322113037109
+
+
+def test_spatial_aggregation(input_ds, polygon_mask):
+    mean_vals_all_pts = geo_utils.spatial_aggregation(input_ds, "mean", polygon_mask=polygon_mask)
+    min_val_rep_pt = geo_utils.spatial_aggregation(input_ds, "min", spatial_unit="representative_point", polygon_mask=polygon_mask)
+    assert mean_vals_all_pts["u100"].values[0][0] == -6.206262588500977
+    assert min_val_rep_pt["u100"].values == -3.39410400390625

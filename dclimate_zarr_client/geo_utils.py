@@ -30,9 +30,9 @@ def _check_input_parameters(time_period = None, agg_method = None, spatial_unit=
         raise InvalidAggregationMethodError(
             f"Specified method {agg_method} not among permitted methods: 'min', 'max', 'median', 'mean', 'std', 'sum'"
         )
-    if spatial_unit and spatial_unit not in ["point", "all"]:
+    if spatial_unit and spatial_unit not in ['point', 'representative_point', 'polygon', 'point_per_polygon', 'all']:
         raise InvalidSpatialUnitError(
-            f"Specified methspatial unit {spatial_unit} not among permitted methods: 'point', 'all'"
+            f"Specified spatial unit {spatial_unit} not among permitted methods: 'point', 'representative_point', 'polygon', 'point_per_polygon', 'all'"
         )
 
 def get_single_point(ds: xr.Dataset, latitude: float, longitude: float) -> np.ndarray:
@@ -177,6 +177,7 @@ def get_data_in_time_range(
 def reduce_polygon_to_point(
     ds: xr.Dataset,
     polygon_mask: pd.Series(shapely.geometry.Polygon),
+    multi: bool = False,
 ) -> xr.Dataset:
     """Subsets data to a representative point approximately at the center of an arbitrary shape.
         This point will always be within the shape, even if the exact center is not.
@@ -185,6 +186,7 @@ def reduce_polygon_to_point(
     Args:
         ds (xr.Dataset): dataset to subset
         polygons_mask (shapely.geometry.Polygon): polygon defining shape
+        multi: boolean indicating whether to extract one point for all polygons (False) or each polygon (True). Default False.
 
     Returns:
         xr.Dataset: subsetted dataset
@@ -192,13 +194,25 @@ def reduce_polygon_to_point(
     pt = unary_union(polygon_mask).representative_point()
     ds = ds.sel(latitude=pt.y, longitude=pt.x, method="nearest")
     return ds
+    # NOTE work in progress multi code below
+    # if not multi:
+    #     pt = unary_union(polygon_mask).representative_point()
+    #     ds = ds.sel(latitude=pt.y, longitude=pt.x, method="nearest")
+    # elif multi:
+    #     pts = polygon_mask.representative_point()
+    #     lons, lats = pts.x, pts.y
+    #     var_name = list(point_ds.data_vars)[0]
+    #     pts_data = ds.sel(latitude=xr.DataArray(lats),longitude=xr.DataArray(lons),method='nearest')[var_name].values
+    #     new_ds = xr.DataArray(pts_data, dims=["latitude","longitude"],)
+    # # NOTE It's impossible to return an xr.DataSet from this function because there will be overlapping lats & lons
+    # # NOTE The better option would be to return a numpy array, pandas DF, or geopandas GDF. Need to check with users
+    # # NOTE this could be a v2 problem
 
 
 def rolling_aggregation(
     ds: xr.Dataset,
     window_size: int,
     agg_method: str,
-    spatial_unit: str = "point",
 ) -> xr.Dataset:
     """Subsets data to a rolling aggregate of data values along a dataset's "time" dimension. 
         The size of the window and the aggregation method are specified by the user.
@@ -214,14 +228,59 @@ def rolling_aggregation(
     Returns:
         xr.Dataset: subsetted dataset
     """
-    _check_input_parameters(agg_method=agg_method, spatial_unit=spatial_unit)
-    spatial_unit_strings = {"point" : None, "all" : ...}
+
+    _check_input_parameters(agg_method=agg_method)
     # Aggregate by the specified method over the specified rolling window length
     rolled = ds.rolling(time=window_size)
     aggregator = getattr(xr.core.rolling.DataArrayRolling, agg_method)
-    rolled_agg = aggregator(rolled, spatial_unit_strings[spatial_unit]).dropna("time") # remove NAs at beginning/end of array where window size is not large enough to compute a value
-    
+    rolled_agg = aggregator(rolled).dropna("time") # remove NAs at beginning/end of array where window size is not large enough to compute a value
+
     return rolled_agg
+
+
+def spatial_aggregation(
+    ds: xr.Dataset,
+    agg_method: str,
+    spatial_unit: str = "point",
+    epsg_crs: str = "epsg:4326",
+    polygon_mask: pd.Series(shapely.geometry.Polygon) = None,
+) -> xr.Dataset:
+    """Subsets data according to a specified combination of time period, units of time, aggregation method, and/or desired spatial unit.
+       Time-based inputs defualt to the entire time range and 1 unit of time, respectively.
+       Spatial units default to points, i.e. every combination of latitudes/longitudes. The only alternative is "all". 
+       For a more nuanced treatment of spatial units use the `get_points_in_polygons` method.
+
+    Args:
+        ds (xr.Dataset): dataset to subset
+        agg_method (str): method to aggregate by
+        spatial_unit (str): the unit of analysis. Defaults to every point.
+        epsg_crs (int, optional): epsg code for polygons_mask (see https://en.wikipedia.org/wiki/EPSG_Geodetic_Parameter_Dataset)
+
+    Returns:
+        xr.Dataset: subsetted dataset
+    """
+    _check_input_parameters(agg_method=agg_method, spatial_unit=spatial_unit)
+    spatial_unit_strings = {"point" : None, "polygon" : "polygon",
+                            "representative_point" : "representative_point",
+                            "point_per_polygon" : "point per polygon", "all" : ...}
+    # Resample by the specified time period and aggregate by the specified method
+    aggregator = getattr(xr.DataArray, agg_method)
+    if spatial_unit == "point":
+        ds_stacked = ds.stack(geo=["latitude","longitude"]).groupby("geo")
+        return aggregator(ds_stacked, ...).unstack("geo")
+    elif spatial_unit == "polygon":
+        ds_poly_pts = get_points_in_polygons(ds, polygon_mask, epsg_crs)
+        ds_stacked = ds_poly_pts.stack(geo=["latitude","longitude"]).groupby("geo")
+        return aggregator(ds_stacked, ...).unstack("geo")
+    elif spatial_unit == "representative_point":
+        return aggregator(reduce_polygon_to_point(ds, polygon_mask))
+    # elif spatial_unit == "point_per_polygon": # TODO fix this
+    #     ds_ls = [reduce_polygon_to_point(ds, geom) for geom in polygon_mask]
+    #     # ds_gls = [reduce_polygon_to_point(ds, geom).stack(geo=["latitude","longitude"]) for geom in polygon_mask]
+    #     import ipdb; ipdb.set_trace(context=4)
+    #     return ds
+    elif spatial_unit == "all":
+        return aggregator(ds.groupby("time"), ...)
 
 
 def temporal_aggregation(
@@ -229,7 +288,6 @@ def temporal_aggregation(
     time_period: str,
     agg_method: str,
     time_unit: int = 1,
-    spatial_unit: str = "point",
 ) -> xr.Dataset:
     """Subsets data according to a specified combination of time period, units of time, aggregation method, and/or desired spatial unit.
        Time-based inputs defualt to the entire time range and 1 unit of time, respectively.
@@ -241,19 +299,18 @@ def temporal_aggregation(
         time_period (str): time period to aggregate by, parsed into DateOffset objects as per https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects
         agg_method (str): method to aggregate by
         time_unit (int): number of time periods to aggregate by. Defaults to 1. Ignored if "all" time periods specified.
-        spatial_unit (str): the unit of analysis. Defaults to every point.
 
     Returns:
         xr.Dataset: subsetted dataset
     """
-    _check_input_parameters(time_period=time_period, agg_method=agg_method, spatial_unit=spatial_unit)
+    _check_input_parameters(time_period=time_period, agg_method=agg_method)
     period_strings = {"hour" : f"{time_unit}H", "day" : f"{time_unit}D", "week" : f"{time_unit}W", "month" : f"{time_unit}M", \
         "quarter" : f"{time_unit}Q", "year" : f"{time_unit}Y", "all" : f"{len(set(ds.time.dt.year.values))}Y"}
-    spatial_unit_strings = {"point" : None, "all" : ...}
     # Resample by the specified time period and aggregate by the specified method
     resampled = ds.resample(time=period_strings[time_period])
     aggregator = getattr(xr.core.resample.DataArrayResample, agg_method)
-    resampled_agg = aggregator(resampled, spatial_unit_strings[spatial_unit])
+    resampled_agg = aggregator(resampled)
+    # resampled_agg = aggregator(resampled, spatial_unit_strings[spatial_unit])
 
     return resampled_agg
     
