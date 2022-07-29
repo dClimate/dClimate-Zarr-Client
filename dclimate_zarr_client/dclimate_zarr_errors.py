@@ -10,6 +10,17 @@ class SelectionTooLargeError(ZarrClientError):
     pass
 
 
+class ConflictingGeoRequestError(ZarrClientError):
+    """Raised when user requests more than one type of geographic query"""
+
+    pass
+
+
+class ConflictingAggregationRequestError(ZarrClientError):
+    """Raised when user requests more than one type of geographic query"""
+
+    pass
+
 class NoMetadataFoundError(ZarrClientError):
     """Raised when user selects as_of before earliest existing metadata"""
 

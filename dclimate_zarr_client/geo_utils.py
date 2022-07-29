@@ -193,34 +193,6 @@ def reduce_polygon_to_point(
     return ds
 
 
-def rolling_aggregation(
-    ds: xr.Dataset,
-    window_size: int,
-    agg_method: str,
-) -> xr.Dataset:
-    """Subsets data to a rolling aggregate of data values along a dataset's "time" dimension. 
-        The size of the window and the aggregation method are specified by the user.
-        Method must be one of "min", "max", "median", "mean", "std", or "sum".
-        Spatial units default to points, i.e. every combination of latitudes/longitudes. The only alternative is "all". 
-
-    Args:
-        ds (xr.Dataset): dataset to subset
-        window_size (int): size of rolling window to apply
-        agg_method (str): method to aggregate by
-        spatial_unit (str): the unit of analysis. Defaults to every point.
-
-    Returns:
-        xr.Dataset: subsetted dataset
-    """
-    _check_input_parameters(agg_method=agg_method)
-    # Aggregate by the specified method over the specified rolling window length
-    rolled = ds.rolling(time=window_size)
-    aggregator = getattr(xr.core.rolling.DataArrayRolling, agg_method)
-    rolled_agg = aggregator(rolled).dropna("time") # remove NAs at beginning/end of array where window size is not large enough to compute a value
-
-    return rolled_agg
-
-
 def spatial_aggregation(
     ds: xr.Dataset,
     agg_method: str,
@@ -271,3 +243,30 @@ def temporal_aggregation(
 
     return resampled_agg
 
+
+def rolling_aggregation(
+    ds: xr.Dataset,
+    window_size: int,
+    agg_method: str,
+) -> xr.Dataset:
+    """Subsets data to a rolling aggregate of data values along a dataset's "time" dimension. 
+        The size of the window and the aggregation method are specified by the user.
+        Method must be one of "min", "max", "median", "mean", "std", or "sum".
+        Spatial units default to points, i.e. every combination of latitudes/longitudes. The only alternative is "all". 
+
+    Args:
+        ds (xr.Dataset): dataset to subset
+        window_size (int): size of rolling window to apply
+        agg_method (str): method to aggregate by
+        spatial_unit (str): the unit of analysis. Defaults to every point.
+
+    Returns:
+        xr.Dataset: subsetted dataset
+    """
+    _check_input_parameters(agg_method=agg_method)
+    # Aggregate by the specified method over the specified rolling window length
+    rolled = ds.rolling(time=window_size)
+    aggregator = getattr(xr.core.rolling.DataArrayRolling, agg_method)
+    rolled_agg = aggregator(rolled).dropna("time") # remove NAs at beginning/end of array where window size is not large enough to compute a value
+
+    return rolled_agg

@@ -46,6 +46,13 @@ def _resolve_ipns_name_hash(ipns_name_hash: str) -> str:
     r.raise_for_status()
     return r.json()["Path"].split("/")[-1]
 
+def get_ipns_name_hash(ipns_name_str) -> str:
+    r = requests.post(f"{DEFAULT_HOST}/key/list", params={"decoder" : 'json'})
+    ipns_rec_dict, ipns_records = {}, []
+    for name_hash_pair in r.json()['Keys']:
+        ipns_records.append(tuple([vals for vals in name_hash_pair.values()]))
+    ipns_rec_dict.update(ipns_records)
+    return ipns_rec_dict[ipns_name_str]
 
 def _get_relevant_metadata(ipfs_head_hash: str, as_of: datetime.datetime) -> dict:
     """Iterates through STAC metadata until metadata generated before as_of is found
