@@ -260,9 +260,6 @@ def spatial_aggregation(
         xr.Dataset: subsetted dataset
     """
     _check_input_parameters(agg_method=agg_method, spatial_unit=spatial_unit)
-    spatial_unit_strings = {"point" : None, "polygon" : "polygon",
-                            "representative_point" : "representative_point",
-                            "point_per_polygon" : "point per polygon", "all" : ...}
     # Resample by the specified time period and aggregate by the specified method
     aggregator = getattr(xr.DataArray, agg_method)
     if spatial_unit == "point":
@@ -310,7 +307,6 @@ def temporal_aggregation(
     resampled = ds.resample(time=period_strings[time_period])
     aggregator = getattr(xr.core.resample.DataArrayResample, agg_method)
     resampled_agg = aggregator(resampled)
-    # resampled_agg = aggregator(resampled, spatial_unit_strings[spatial_unit])
 
     return resampled_agg
     
