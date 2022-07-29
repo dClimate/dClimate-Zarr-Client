@@ -4,7 +4,6 @@ import dclimate_zarr_client.geo_utils as geo_utils
 import pytest
 import xarray as xr
 import geopandas as gpd
-from shapely.ops import unary_union
 
 
 @pytest.fixture
@@ -55,7 +54,7 @@ def test_temporal_aggregation(input_ds):
 
 
 def test_spatial_aggregation(input_ds, polygon_mask):
-    mean_vals_all_pts = geo_utils.spatial_aggregation(input_ds, "mean", polygon_mask=polygon_mask)
-    min_val_rep_pt = geo_utils.spatial_aggregation(input_ds, "min", spatial_unit="representative_point", polygon_mask=polygon_mask)
-    assert mean_vals_all_pts["u100"].values[0][0] == -6.206262588500977
-    assert min_val_rep_pt["u100"].values == -3.39410400390625
+    mean_vals_all_pts = geo_utils.spatial_aggregation(input_ds, "mean")
+    min_val_rep_pt = geo_utils.spatial_aggregation(input_ds, "min")
+    assert float(mean_vals_all_pts["u100"].values[0]) == 1.5880329608917236
+    assert float(min_val_rep_pt["u100"].values[0]) == -9.5386962890625

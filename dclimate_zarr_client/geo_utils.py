@@ -30,10 +30,7 @@ def _check_input_parameters(time_period = None, agg_method = None, spatial_unit=
         raise InvalidAggregationMethodError(
             f"Specified method {agg_method} not among permitted methods: 'min', 'max', 'median', 'mean', 'std', 'sum'"
         )
-    if spatial_unit and spatial_unit not in ['point', 'representative_point', 'polygon', 'point_per_polygon', 'all']:
-        raise InvalidSpatialUnitError(
-            f"Specified spatial unit {spatial_unit} not among permitted methods: 'point', 'representative_point', 'polygon', 'point_per_polygon', 'all'"
-        )
+
 
 def get_single_point(ds: xr.Dataset, latitude: float, longitude: float) -> np.ndarray:
     """Gets array corresponding to the full time series for a single point in a dataset
@@ -194,19 +191,6 @@ def reduce_polygon_to_point(
     pt = unary_union(polygon_mask).representative_point()
     ds = ds.sel(latitude=pt.y, longitude=pt.x, method="nearest")
     return ds
-    # NOTE work in progress multi code below
-    # if not multi:
-    #     pt = unary_union(polygon_mask).representative_point()
-    #     ds = ds.sel(latitude=pt.y, longitude=pt.x, method="nearest")
-    # elif multi:
-    #     pts = polygon_mask.representative_point()
-    #     lons, lats = pts.x, pts.y
-    #     var_name = list(point_ds.data_vars)[0]
-    #     pts_data = ds.sel(latitude=xr.DataArray(lats),longitude=xr.DataArray(lons),method='nearest')[var_name].values
-    #     new_ds = xr.DataArray(pts_data, dims=["latitude","longitude"],)
-    # # NOTE It's impossible to return an xr.DataSet from this function because there will be overlapping lats & lons
-    # # NOTE The better option would be to return a numpy array, pandas DF, or geopandas GDF. Need to check with users
-    # # NOTE this could be a v2 problem
 
 
 def rolling_aggregation(
@@ -228,7 +212,6 @@ def rolling_aggregation(
     Returns:
         xr.Dataset: subsetted dataset
     """
-
     _check_input_parameters(agg_method=agg_method)
     # Aggregate by the specified method over the specified rolling window length
     rolled = ds.rolling(time=window_size)
@@ -241,43 +224,21 @@ def rolling_aggregation(
 def spatial_aggregation(
     ds: xr.Dataset,
     agg_method: str,
-    spatial_unit: str = "point",
-    epsg_crs: str = "epsg:4326",
-    polygon_mask: pd.Series(shapely.geometry.Polygon) = None,
 ) -> xr.Dataset:
-    """Subsets data according to a specified combination of time period, units of time, aggregation method, and/or desired spatial unit.
-       Time-based inputs defualt to the entire time range and 1 unit of time, respectively.
-       Spatial units default to points, i.e. every combination of latitudes/longitudes. The only alternative is "all". 
+    """Subsets data for all points for every time period according to the specified aggregation method. 
        For a more nuanced treatment of spatial units use the `get_points_in_polygons` method.
 
     Args:
         ds (xr.Dataset): dataset to subset
         agg_method (str): method to aggregate by
-        spatial_unit (str): the unit of analysis. Defaults to every point.
-        epsg_crs (int, optional): epsg code for polygons_mask (see https://en.wikipedia.org/wiki/EPSG_Geodetic_Parameter_Dataset)
 
     Returns:
         xr.Dataset: subsetted dataset
     """
-    _check_input_parameters(agg_method=agg_method, spatial_unit=spatial_unit)
-    # Resample by the specified time period and aggregate by the specified method
+    _check_input_parameters(agg_method=agg_method)
+    # Aggregate by the specified method across all time periods
     aggregator = getattr(xr.DataArray, agg_method)
-    if spatial_unit == "point":
-        ds_stacked = ds.stack(geo=["latitude","longitude"]).groupby("geo")
-        return aggregator(ds_stacked, ...).unstack("geo")
-    elif spatial_unit == "polygon":
-        ds_poly_pts = get_points_in_polygons(ds, polygon_mask, epsg_crs)
-        ds_stacked = ds_poly_pts.stack(geo=["latitude","longitude"]).groupby("geo")
-        return aggregator(ds_stacked, ...).unstack("geo")
-    elif spatial_unit == "representative_point":
-        return aggregator(reduce_polygon_to_point(ds, polygon_mask))
-    # elif spatial_unit == "point_per_polygon": # TODO fix this
-    #     ds_ls = [reduce_polygon_to_point(ds, geom) for geom in polygon_mask]
-    #     # ds_gls = [reduce_polygon_to_point(ds, geom).stack(geo=["latitude","longitude"]) for geom in polygon_mask]
-    #     import ipdb; ipdb.set_trace(context=4)
-    #     return ds
-    elif spatial_unit == "all":
-        return aggregator(ds.groupby("time"), ...)
+    return aggregator(ds.groupby("time"), ...)
 
 
 def temporal_aggregation(
@@ -309,12 +270,4 @@ def temporal_aggregation(
     resampled_agg = aggregator(resampled)
 
     return resampled_agg
-    
-    
 
-"""
-Spatial aggregations to a single point, as well as full queries
-Temporal aggregations to daily, weekly, yearly, full data
-xarray.rolling
-option to send back netcdf
-"""
