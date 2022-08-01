@@ -1,18 +1,9 @@
-import pathlib
-
 import dclimate_zarr_client.geo_utils as geo_utils
-import pytest
-import xarray as xr
-
-
-@pytest.fixture
-def input_ds():
-    return xr.open_zarr(pathlib.Path(__file__).parent / "etc" / "retrieval_test.zarr")
 
 
 def test_get_single_point(input_ds):
     point = geo_utils.get_single_point(input_ds, 40, -120)
-    assert point.shape == (168,)
+    assert point["u100"].values.shape == (168,)
 
 
 def test_get_points_in_circle(input_ds):
@@ -21,3 +12,34 @@ def test_get_points_in_circle(input_ds):
     assert float(ds.latitude.max()) == 40.25
     assert float(ds.longitude.min()) == -120.5
     assert float(ds.longitude.max()) == -119.5
+
+
+def test_representative_point(input_ds, polygon_mask):
+    rep_pt_ds = geo_utils.reduce_polygon_to_point(input_ds, polygon_mask=polygon_mask)
+    assert rep_pt_ds["u100"].values[0] == 0.9564208984375
+
+
+def test_rolling_aggregation(input_ds):
+    mean_vals = geo_utils.rolling_aggregation(input_ds, 5, "mean")
+    max_vals = geo_utils.rolling_aggregation(input_ds, 5, "max")
+    std_vals = geo_utils.rolling_aggregation(input_ds, 5, "std")
+    assert mean_vals["u100"].values[0][0][0] == 7.912628173828125
+    assert max_vals["u100"].values[0][0][0] == 8.5950927734375
+    assert std_vals["u100"].values[0][0][0] == 0.5272848606109619
+
+
+def test_temporal_aggregation(input_ds):
+    # [0][0][0] returns the first value for latitude 45.0, longitue -140.0 
+    daily_maxs = geo_utils.temporal_aggregation(input_ds, time_period="day", agg_method="max", time_unit = 2)
+    monthly_means = geo_utils.temporal_aggregation(input_ds, time_period="month", agg_method="mean")
+    yearly_std = geo_utils.temporal_aggregation(input_ds, time_period="year", agg_method="std")
+    assert daily_maxs["u100"].values[0][0][0] == 8.5950927734375
+    assert monthly_means["u100"].values[0][0][0] == -0.19848433136940002
+    assert yearly_std["u100"].values[0][0][0] == 6.490322113037109
+
+
+def test_spatial_aggregation(input_ds):
+    mean_vals_all_pts = geo_utils.spatial_aggregation(input_ds, "mean")
+    min_val_rep_pt = geo_utils.spatial_aggregation(input_ds, "min")
+    assert float(mean_vals_all_pts["u100"].values[0]) == 1.5880329608917236
+    assert float(min_val_rep_pt["u100"].values[0]) == -9.5386962890625
