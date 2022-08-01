@@ -16,7 +16,7 @@ def test_get_points_in_circle(input_ds):
 
 def test_representative_point(input_ds, polygon_mask):
     rep_pt_ds = geo_utils.reduce_polygon_to_point(input_ds, polygon_mask=polygon_mask)
-    assert rep_pt_ds["u100"].values[0] == 1.5648193359375
+    assert rep_pt_ds["u100"].values[0] == 0.9564208984375
 
 
 def test_rolling_aggregation(input_ds):
@@ -38,7 +38,7 @@ def test_temporal_aggregation(input_ds):
     assert yearly_std["u100"].values[0][0][0] == 6.490322113037109
 
 
-def test_spatial_aggregation(input_ds, polygon_mask):
+def test_spatial_aggregation(input_ds):
     mean_vals_all_pts = geo_utils.spatial_aggregation(input_ds, "mean")
     min_val_rep_pt = geo_utils.spatial_aggregation(input_ds, "min")
     assert float(mean_vals_all_pts["u100"].values[0]) == 1.5880329608917236

@@ -1,6 +1,6 @@
 import dclimate_zarr_client.client as client
 
-def test_geo_query(reduced_polygon_mask):
+def test_geo_query(polygon_mask):
     point = client.geo_temporal_query(ipns_name = 'era5_wind_100m_u-hourly', 
         point_kwargs={"lat" : 39.75, "lon" : -118.5},
         rolling_agg_kwargs = {"window_size" : 5, "agg_method" : "mean"})
@@ -16,7 +16,7 @@ def test_geo_query(reduced_polygon_mask):
         spatial_agg_kwargs = {"agg_method" : "std"},
         temporal_agg_kwargs = {"time_period" : "day", "agg_method" : "std", "time_unit" : 1})
     polygon = client.geo_temporal_query(ipns_name = 'era5_wind_100m_u-hourly', 
-        polygon_kwargs={"polygons_mask" : reduced_polygon_mask, "epsg_crs" : "epsg:4326"},
+        polygon_kwargs={"polygons_mask" : polygon_mask, "epsg_crs" : "epsg:4326"},
         spatial_agg_kwargs = {"agg_method" : "mean"},
         rolling_agg_kwargs = {"window_size" : 5, "agg_method" : "mean"})
 
