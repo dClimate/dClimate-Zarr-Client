@@ -32,8 +32,8 @@ def _check_input_parameters(time_period = None, agg_method = None, spatial_unit=
         )
 
 
-def get_single_point(ds: xr.Dataset, latitude: float, longitude: float) -> np.ndarray:
-    """Gets array corresponding to the full time series for a single point in a dataset
+def get_single_point(ds: xr.Dataset, lat: float, lon: float) -> xr.Dataset:
+    """Gets a dataset corresponding to the full time series for a single point in a dataset
 
     Args:
         ds (xr.Dataset): dataset to subset
@@ -41,11 +41,9 @@ def get_single_point(ds: xr.Dataset, latitude: float, longitude: float) -> np.nd
         longitude (float): longitude coordinate
 
     Returns:
-        np.ndarray: time series array
+        xr.Dataset: subsetted dataset
     """
-    point_ds = ds.sel(latitude=latitude, longitude=longitude, method="nearest")
-    var_name = list(point_ds.data_vars)[0]
-    return point_ds[var_name].values
+    return ds.sel(latitude=lat, longitude=lon, method="nearest")
 
 
 def _haversine(
@@ -125,10 +123,10 @@ def get_points_in_rectangle(
         xr.Dataset: subsetted dataset
     """
     rectangle_ds = ds.where(
-        (ds.latitude > min_lat)
-        & (ds.latitude < max_lat)
-        & (ds.longitude > min_lon)
-        & (ds.longitude < max_lon),
+        (ds.latitude >= min_lat)
+        & (ds.latitude <= max_lat)
+        & (ds.longitude >= min_lon)
+        & (ds.longitude <= max_lon),
         drop=True,
     )
     return rectangle_ds

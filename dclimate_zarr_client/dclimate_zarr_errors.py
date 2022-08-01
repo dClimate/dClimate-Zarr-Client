@@ -10,6 +10,11 @@ class SelectionTooLargeError(ZarrClientError):
     pass
 
 
+class SelectionTooSmallError(ZarrClientError):
+    """Raised when user queries a latitude or longtidue range resulting in a single point and this would conflict with a specified aggregation method"""
+
+    pass
+
 class ConflictingGeoRequestError(ZarrClientError):
     """Raised when user requests more than one type of geographic query"""
 
@@ -39,5 +44,10 @@ class InvalidTimePeriodError(ZarrClientError):
 
 class InvalidSpatialUnitError(ZarrClientError):
     """Raised when user provides a spatial unit outside of [point, all]"""
+
+    pass
+
+class InvalidExportFormatError(ZarrClientError):
+    """Raised when user specifies an export format other than [array, netcdf]"""
 
     pass

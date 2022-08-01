@@ -1,24 +1,9 @@
-import pathlib
-
 import dclimate_zarr_client.geo_utils as geo_utils
-import pytest
-import xarray as xr
-import geopandas as gpd
 
-
-@pytest.fixture
-def input_ds():
-    return xr.open_zarr(pathlib.Path(__file__).parent / "etc" / "retrieval_test.zarr")
-
-@pytest.fixture
-def polygon_mask():
-    shp = gpd.read_file(pathlib.Path(__file__).parent / "etc" / "northern_ca_counties.geojson")
-    return shp.geometry.values
-    
 
 def test_get_single_point(input_ds):
     point = geo_utils.get_single_point(input_ds, 40, -120)
-    assert point.shape == (168,)
+    assert point["u100"].values.shape == (168,)
 
 
 def test_get_points_in_circle(input_ds):
