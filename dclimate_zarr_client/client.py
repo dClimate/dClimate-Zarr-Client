@@ -8,29 +8,35 @@ import typing
 import numpy as np
 import xarray as xr
 
-from .dclimate_zarr_errors import SelectionTooLargeError, SelectionTooSmallError, ConflictingGeoRequestError, ConflictingAggregationRequestError, \
-    InvalidExportFormatError
+from .dclimate_zarr_errors import (
+    SelectionTooLargeError,
+    SelectionTooSmallError,
+    ConflictingGeoRequestError,
+    ConflictingAggregationRequestError,
+    InvalidExportFormatError,
+)
 from .geo_utils import (
     get_data_in_time_range,
-    # get_single_point,
+    get_single_point,
     get_points_in_circle,
     get_points_in_polygons,
     get_points_in_rectangle,
-    get_single_point,
     rolling_aggregation,
     spatial_aggregation,
     temporal_aggregation,
-    # get_points_in_polygons,
-    # get_points_in_rectangle,
 )
 from .ipfs_retrieval import get_dataset_by_ipns_hash, get_ipns_name_hash
 
-# Users should not select more than this number of data points
+# Users should not select more than this number of data points and coordinates
 DEFAULT_POINT_LIMIT = 100 * 100 * 200_000
-DEFAULT_AREA_LIMIT = 400 # units are square decimal degrees
+DEFAULT_AREA_LIMIT = (
+    400  # square coordinates, whatever their actual size in km or degrees
+)
 
 
-def _check_request_area(ds, area_limit: int = DEFAULT_AREA_LIMIT, spatial_agg_kwargs = None):
+def _check_request_area(
+    ds: xr.Dataset, area_limit: int = DEFAULT_AREA_LIMIT, spatial_agg_kwargs=None
+):
     """Checks the total area of the request
 
     Args:
@@ -39,15 +45,17 @@ def _check_request_area(ds, area_limit: int = DEFAULT_AREA_LIMIT, spatial_agg_kw
 
     Raises:
         SelectionTooLargeError: Raised when dataset area limit is violated
+        SelectionTooSmallError: Raised when dataset is 1x1 and a spatial aggregation method is called
     """
     request_area = len(ds.latitude) * len(ds.longitude)
     if request_area > area_limit:
         raise SelectionTooLargeError(
-            f"Selection of ~ {request_area} degrees is more than limit of {area_limit}"
+            f"Selection of ~ {request_area} square coordinates is more than limit of {area_limit}"
         )
     elif request_area == 1 and spatial_agg_kwargs:
         raise SelectionTooSmallError(
-            f"Selection of 1 square degree is incompatible with spatial aggregation and will return all 0s. Aborting."
+            "Selection of 1 square degree is incompatible with spatial aggregation as it will return all 0s."
+            " Consider re-submitting with a larger target area or radius."
         )
 
 
@@ -69,7 +77,7 @@ def _check_dataset_size(ds: xr.Dataset, point_limit: int = DEFAULT_POINT_LIMIT):
 
 
 def geo_temporal_query(
-    ipns_name: str,
+    ipns_key_str: str,
     point_kwargs: dict = None,
     circle_kwargs: dict = None,
     rectangle_kwargs: dict = None,
@@ -81,58 +89,83 @@ def geo_temporal_query(
     as_of: typing.Optional[datetime.datetime] = None,
     area_limit: int = DEFAULT_AREA_LIMIT,
     point_limit: int = DEFAULT_POINT_LIMIT,
-    output_format: str = "array"
+    output_format: str = "array",
 ) -> typing.Union[np.ndarray, bytes]:
-    """Filter an XArray dataset by specified spatial and/or temporal bounds and aggregate according to spatial and/or temporal logic, if desired.
-        Before aggregating check that the filtered data fits within specified point and area maximums to avoid computationally expensive retrieval and processing operations.
-        When bounds or aggregation logic are not provided, pass the dataset along untouched. 
+    """Filter an XArray dataset by specified spatial and/or temporal bounds and aggregate \
+        according to spatial and/or temporal logic, if desired.
+        Before aggregating check that the filtered data fits within specified point and area maximums \
+            to avoid computationally expensive retrieval and processing operations.
+        When bounds or aggregation logic are not provided, pass the dataset along untouched.
+
         Return either a numpy array of data values or a NetCDF file.
 
         Only one of point, circle, rectangle, or polygon kwargs may be provided
-        Only one of temporal or rolling aggregation kwargs may be provided, although they can be chained with spatial aggregations if desired.
+        Only one of temporal or rolling aggregation kwargs may be provided, \
+            although they can be chained with spatial aggregations if desired.
 
     Args:
-        ipns_name (str): name used to link dataset to an ipns_name hash
-        circle_kwargs (dict): a dictionary of parameters relevant to a circular query
-        rectangle_kwargs (dict): a dictionary of parameters relevant to a rectangular query
-        polygon_kwargs (dict): a dictionary of parameters relevant to a polygonal query
-        spatial_agg_kwargs: a dictionary of parameters relevant to a spatial aggregation operation
-        temporal_agg_kwargs: a dictionary of parameters relevant to a temporal aggregation operation
-        rolling_agg_kwargs: a dictionary of parameters relevant to a rolling aggregation operation
+        ipns_key_str (str): name used to link dataset to an ipns_name hash
+        circle_kwargs (dict, optional): a dictionary of parameters relevant to a circular query
+        rectangle_kwargs (dict, optional): a dictionary of parameters relevant to a rectangular query
+        polygon_kwargs (dict, optional): a dictionary of parameters relevant to a polygonal query
+        spatial_agg_kwargs (dict, optional): a dictionary of parameters relevant to a spatial aggregation operation
+        temporal_agg_kwargs (dict, optional): a dictionary of parameters relevant to a temporal aggregation operation
+        rolling_agg_kwargs (dict, optional): a dictionary of parameters relevant to a rolling aggregation operation
         time_range (typing.Optional[typing.List[datetime.datetime]], optional):
-            time range in which to subset data. Defaults to None.
+            time range in which to subset data.
+            Defaults to None.
         as_of (typing.Optional[datetime.datetime], optional):
             pull in most recent data created before this time. If None, just get most recent.
             Defaults to None.
-        area_limit (int, optional): maximum area in decimal degrees squared that a user may request. Defaults to DEFAULT_AREA_LIMIT.
-        point_limit (int, optional): maximum number of data points user can fill. Defaults to DEFAULT_POINT_LIMIT.
-        output_format (str, optional): Current supported formats are `array` and `netcdf`. Defaults to "array", which provides a numpy float32 array.
+        area_limit (int, optional): maximum area in decimal degrees squared that a user may request.
+            Defaults to DEFAULT_AREA_LIMIT.
+        point_limit (int, optional): maximum number of data points user can fill.
+            Defaults to DEFAULT_POINT_LIMIT.
+        output_format (str, optional): Current supported formats are `array` and `netcdf`.
+            Defaults to "array", which provides a numpy array of float32 values.
 
     Returns:
         typing.Union[np.ndarray, bytes]: Output data as array (default) or NetCDF
     """
     # Check for incompatible request parameters
-    if len([kwarg_dict for kwarg_dict in [circle_kwargs, rectangle_kwargs, polygon_kwargs, point_kwargs] if kwarg_dict is not None]) > 1:
-        raise ConflictingGeoRequestError(
-            f"User requested more than one type of geographic query, but only one can be submitted at a time"
+    if (
+        len(
+            [
+                kwarg_dict
+                for kwarg_dict in [
+                    circle_kwargs,
+                    rectangle_kwargs,
+                    polygon_kwargs,
+                    point_kwargs,
+                ]
+                if kwarg_dict is not None
+            ]
         )
-    if spatial_agg_kwargs and point_kwargs: 
+        > 1
+    ):
         raise ConflictingGeoRequestError(
-            f"User requested spatial aggregation methods on a single point, but these are mutually exclusive parameters. Only one may be requested at a time."
+            "User requested more than one type of geographic query, but only one can be submitted at a time"
+        )
+    if spatial_agg_kwargs and point_kwargs:
+        raise ConflictingGeoRequestError(
+            "User requested spatial aggregation methods on a single point, but these are mutually exclusive parameters. \
+                Only one may be requested at a time."
         )
     if temporal_agg_kwargs and rolling_agg_kwargs:
         raise ConflictingAggregationRequestError(
-            f"User requested both rolling and temporal aggregation, but these are mutually exclusive operations. Only one may be requested at a time."
+            "User requested both rolling and temporal aggregation, but these are mutually exclusive operations. \
+                Only one may be requested at a time."
         )
     if output_format not in ["array", "netcdf"]:
         raise InvalidExportFormatError(
-            f"User requested an invalid export format. Only 'array' or 'netcdf' permitted."
+            "User requested an invalid export format. Only 'array' or 'netcdf' permitted."
         )
-    # Use the provided dataset string to find the dataset via IPNS
-    ipns_name_hash = get_ipns_name_hash(ipns_name)
+    # Use the provided dataset string to find the dataset via IPNS\
+    ipns_name_hash = get_ipns_name_hash(ipns_key_str)
     ds = get_dataset_by_ipns_hash(ipns_name_hash, as_of=as_of)
     # Filter data down temporally, then spatially, and check that the size of resulting dataset fits within the limit.
-    # While these filters are theoretically optional -- a user can get the entire DS by providing no filters -- this will almost certainly cause the checks to fail
+    # While a user can get the entire DS by providing no filters, \
+    # this will almost certainly cause the size checks to fail
     if time_range:
         ds = get_data_in_time_range(ds, *time_range)
     if point_kwargs:
@@ -147,7 +180,7 @@ def geo_temporal_query(
     try:
         _check_request_area(ds, area_limit, spatial_agg_kwargs)
         _check_dataset_size(ds, point_limit)
-    except TypeError: # TypeError indicates a single point DS, which is always of acceptable size
+    except TypeError:  # TypeError indicates a single point DS, which is always of acceptable size
         pass
     # Perform all requested valid aggregations. First aggregate data spatially, then temporally or on a rolling basis.
     if spatial_agg_kwargs:
