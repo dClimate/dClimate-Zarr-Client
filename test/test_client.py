@@ -24,8 +24,11 @@ def patched_get_dataset_by_ipns_hash(ipfs_hash, as_of):
     """
     Patch ipns dataset function to return a prepared dataset for testing
     """
-    with zarr.ZipStore(pathlib.Path(__file__).parent / "etc" / "sample_zarrs" / f"{ipfs_hash}.zip", mode='r') as in_zarr:
-         return xr.open_zarr(in_zarr).compute()
+    with zarr.ZipStore(
+        pathlib.Path(__file__).parent / "etc" / "sample_zarrs" / f"{ipfs_hash}.zip",
+        mode="r",
+    ) as in_zarr:
+        return xr.open_zarr(in_zarr).compute()
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -117,15 +120,9 @@ def test_geo_conflicts():
             point_kwargs={"lat": 39.75, "lon": -118.5},
             spatial_agg_kwargs={"agg_method": "std"},
         )
-    assert (
-        multi_exc_info.match("User requested more than one type of geographic query")
-        == True
-    )
-    assert (
-        single_exc_info.match(
-            "User requested spatial aggregation methods on a single point"
-        )
-        == True
+    assert multi_exc_info.match("User requested more than one type of geographic query")
+    assert single_exc_info.match(
+        "User requested spatial aggregation methods on a single point"
     )
 
 

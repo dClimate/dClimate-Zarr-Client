@@ -7,8 +7,8 @@ import pathlib
 
 @pytest.fixture
 def input_ds():
-    with zarr.ZipStore('etc/retrieval_test.zip', mode='r') as in_zarr:
-         return xr.open_zarr(in_zarr).compute()
+    with zarr.ZipStore("etc/retrieval_test.zip", mode="r") as in_zarr:
+        return xr.open_zarr(in_zarr).compute()
 
 
 @pytest.fixture
