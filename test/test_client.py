@@ -2,6 +2,7 @@ import pytest
 import dclimate_zarr_client.client as client
 import xarray as xr
 import pathlib
+import zipfile
 
 from dclimate_zarr_client.dclimate_zarr_errors import (
     SelectionTooLargeError,
@@ -21,9 +22,10 @@ def patched_get_ipns_name_hash(ipns_key):
 def patched_get_dataset_by_ipns_hash(ipfs_hash):
     """
     Patch ipns dataset function to return a prepared dataset for testing
-    """
-    path = pathlib.Path(__file__).parent / "etc" / "sample_zarrs" / f"{ipfs_hash}.zarr"
-    return xr.open_zarr(path)
+    """ 
+    with zipfile.Zipfile(pathlib.Path(__file__).parent / "etc" / "sample_zarrs" / f"{ipfs_hash}.zarr") as zipped_zarr:
+        zarr = xr.open_zarr(zipped_zarr)
+    return zarr
 
 
 @pytest.fixture(scope="module", autouse=True)
