@@ -1,0 +1,10 @@
+{
+    "_ARRAY_DIMENSIONS": [
+        "time",
+        "latitude",
+        "longitude"
+    ],
+    "code": 246,
+    "table": 228,
+    "units": "kg kg**-1"
+}

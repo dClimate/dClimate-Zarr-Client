@@ -42,17 +42,38 @@ def _get_previous_hash_from_metadata(metadata: dict) -> typing.Optional[str]:
 
 
 def _resolve_ipns_name_hash(ipns_name_hash: str) -> str:
+    """Find the latest IPFS hash corresponding to a stable ipns name hash
+
+    Args:
+        ipfs_name_hash (str): stable IPNS name hash
+
+    Returns:
+        str: ipfs hash corresponding to this ipns name hash
+    """
     r = requests.post(f"{DEFAULT_HOST}/name/resolve", params={"arg": ipns_name_hash})
     r.raise_for_status()
     return r.json()["Path"].split("/")[-1]
 
-def get_ipns_name_hash(ipns_name_str) -> str:
-    r = requests.post(f"{DEFAULT_HOST}/key/list", params={"decoder" : 'json'})
+
+def get_ipns_name_hash(ipns_key_str) -> str:
+    """Find the latest IPNS name hash corresponding to a string (key)
+
+    Args:
+        ipfs_key_str (str): a string (key) identifying a dataset
+
+    Raises:
+        KeyError: raised if no IPNS key string is found in the IPNS keys list
+
+    Returns:
+        str: ipfsname hash corresponding to the provided string
+    """
+    r = requests.post(f"{DEFAULT_HOST}/key/list", params={"decoder": "json"})
     ipns_rec_dict, ipns_records = {}, []
-    for name_hash_pair in r.json()['Keys']:
+    for name_hash_pair in r.json()["Keys"]:
         ipns_records.append(tuple([vals for vals in name_hash_pair.values()]))
     ipns_rec_dict.update(ipns_records)
-    return ipns_rec_dict[ipns_name_str]
+    return ipns_rec_dict[ipns_key_str]
+
 
 def _get_relevant_metadata(ipfs_head_hash: str, as_of: datetime.datetime) -> dict:
     """Iterates through STAC metadata until metadata generated before as_of is found
