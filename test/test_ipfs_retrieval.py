@@ -24,7 +24,7 @@ def patched_resolve_ipns_name_hash(ipns_name_hash):
 
 def patched_get_dataset_by_ipfs_hash(ipfs_hash):
     with zarr.ZipStore(pathlib.Path(__file__).parent / "etc" / "sample_zarrs" / f"{ipfs_hash}.zip", mode='r') as in_zarr:
-       return xr.open_zarr(in_zarr).compute()
+         return xr.open_zarr(in_zarr).compute()
 
 
 @pytest.fixture(scope="module", autouse=True)

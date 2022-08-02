@@ -12,6 +12,7 @@ from dclimate_zarr_client.dclimate_zarr_errors import (
     InvalidExportFormatError,
 )
 
+
 def patched_get_ipns_name_hash(ipns_key):
     """
     Patch ipns name hash retrieval function to return a prepared ipfs key referring to a testing dataset
@@ -22,9 +23,9 @@ def patched_get_ipns_name_hash(ipns_key):
 def patched_get_dataset_by_ipns_hash(ipfs_hash, as_of):
     """
     Patch ipns dataset function to return a prepared dataset for testing
-    """ 
+    """
     with zarr.ZipStore(pathlib.Path(__file__).parent / "etc" / "sample_zarrs" / f"{ipfs_hash}.zip", mode='r') as in_zarr:
-        return xr.open_zarr(in_zarr).compute()
+         return xr.open_zarr(in_zarr).compute()
 
 
 @pytest.fixture(scope="module", autouse=True)
