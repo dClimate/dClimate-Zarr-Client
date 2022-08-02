@@ -5,7 +5,7 @@ import pathlib
 import dclimate_zarr_client.ipfs_retrieval as ipfs_retrieval
 import pytest
 import xarray as xr
-import zipfile
+import zarr
 from dclimate_zarr_client.dclimate_zarr_errors import NoMetadataFoundError
 
 IPNS_NAME_HASH = "k2k4r8niyotlqqqvqoh7jr4gp6zp0b0975k88zmak151chv87w2p11qz"
@@ -23,9 +23,8 @@ def patched_resolve_ipns_name_hash(ipns_name_hash):
 
 
 def patched_get_dataset_by_ipfs_hash(ipfs_hash):
-    with zipfile.Zipfile(pathlib.Path(__file__).parent / "etc" / "sample_zarrs" / f"{ipfs_hash}.zarr") as zipped_zarr:
-        zarr = xr.open_zarr(zipped_zarr)
-    return zarr
+    with zarr.ZipStore(pathlib.Path(__file__).parent / "etc" / "sample_zarrs" / f"{ipfs_hash}.zip", mode='r') as in_zarr:
+       return xr.open_zarr(in_zarr).compute()
 
 
 @pytest.fixture(scope="module", autouse=True)

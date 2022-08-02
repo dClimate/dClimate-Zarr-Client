@@ -2,7 +2,7 @@ import pytest
 import dclimate_zarr_client.client as client
 import xarray as xr
 import pathlib
-import zipfile
+import zarr
 
 from dclimate_zarr_client.dclimate_zarr_errors import (
     SelectionTooLargeError,
@@ -12,33 +12,32 @@ from dclimate_zarr_client.dclimate_zarr_errors import (
     InvalidExportFormatError,
 )
 
-
 def patched_get_ipns_name_hash(ipns_key):
     """
     Patch ipns name hash retrieval function to return a prepared ipfs key referring to a testing dataset
     """
     return "bafyreiglm3xvfcwkjbdqlwg3mc6zgngxuyfj6tkgfb6qobtmlzobpp63sq"
 
-def patched_get_dataset_by_ipns_hash(ipfs_hash):
+
+def patched_get_dataset_by_ipns_hash(ipfs_hash, as_of):
     """
     Patch ipns dataset function to return a prepared dataset for testing
     """ 
-    with zipfile.Zipfile(pathlib.Path(__file__).parent / "etc" / "sample_zarrs" / f"{ipfs_hash}.zarr") as zipped_zarr:
-        zarr = xr.open_zarr(zipped_zarr)
-    return zarr
+    with zarr.ZipStore(pathlib.Path(__file__).parent / "etc" / "sample_zarrs" / f"{ipfs_hash}.zip", mode='r') as in_zarr:
+        return xr.open_zarr(in_zarr).compute()
 
 
 @pytest.fixture(scope="module", autouse=True)
 def default_session_fixture(module_mocker):
     """
-    Patch metadata and Zarr retrieval functions in this test
+    Patch IPNS dataset retrieval functions in this test
     """
     module_mocker.patch(
-        "dclimate_zarr_client.ipfs_retrieval.get_ipns_name_hash",
+        "dclimate_zarr_client.client.get_ipns_name_hash",
         patched_get_ipns_name_hash,
     )
     module_mocker.patch(
-        "dclimate_zarr_client.ipfs_retrieval.get_dataset_by_ipns_hash",
+        "dclimate_zarr_client.client.get_dataset_by_ipns_hash",
         patched_get_dataset_by_ipns_hash,
     )
 

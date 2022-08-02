@@ -1,13 +1,15 @@
 import pytest
 import xarray as xr
+import zarr
 import geopandas as gpd
 import pathlib
 
 
 @pytest.fixture
 def input_ds():
-    return xr.open_zarr(pathlib.Path(__file__).parent / "etc" / "retrieval_test.zarr")
-
+    with zarr.ZipStore('etc/retrieval_test.zip', mode='r') as in_zarr:
+       return xr.open_zarr(in_zarr).compute()
+    
 
 @pytest.fixture
 def oversized_polygons_mask():
