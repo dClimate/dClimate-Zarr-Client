@@ -217,8 +217,8 @@ def spatial_aggregation(
     """
     _check_input_parameters(agg_method=agg_method)
     # Aggregate by the specified method across all time periods
-    aggregator = getattr(xr.DataArray, agg_method)
-    return aggregator(ds.groupby("time"), ...)
+    aggregator = getattr(xr.Dataset, agg_method)
+    return aggregator(ds.groupby("time"), ..., keep_attrs=True)
 
 
 def temporal_aggregation(
@@ -255,8 +255,8 @@ def temporal_aggregation(
     }
     # Resample by the specified time period and aggregate by the specified method
     resampled = ds.resample(time=period_strings[time_period])
-    aggregator = getattr(xr.core.resample.DataArrayResample, agg_method)
-    resampled_agg = aggregator(resampled)
+    aggregator = getattr(xr.core.resample.DatasetResample, agg_method)
+    resampled_agg = aggregator(resampled, keep_attrs=True)
 
     return resampled_agg
 
@@ -281,8 +281,8 @@ def rolling_aggregation(
     _check_input_parameters(agg_method=agg_method)
     # Aggregate by the specified method over the specified rolling window length
     rolled = ds.rolling(time=window_size)
-    aggregator = getattr(xr.core.rolling.DataArrayRolling, agg_method)
-    rolled_agg = aggregator(rolled).dropna(
+    aggregator = getattr(xr.core.rolling.DatasetRolling, agg_method)
+    rolled_agg = aggregator(rolled, keep_attrs=True).dropna(
         "time"
     )  # remove NAs at beginning/end of array where window size is not large enough to compute a value
 
