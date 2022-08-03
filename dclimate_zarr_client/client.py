@@ -30,7 +30,7 @@ from .ipfs_retrieval import get_dataset_by_ipns_hash, get_ipns_name_hash
 # Users should not select more than this number of data points and coordinates
 DEFAULT_POINT_LIMIT = 100 * 100 * 200_000
 DEFAULT_AREA_LIMIT = (
-    2500  # square coordinates, whatever their actual size in km or degrees
+    400  # square coordinates, whatever their actual size in km or degrees
 )
 
 
@@ -77,7 +77,7 @@ def _check_dataset_size(ds: xr.Dataset, point_limit: int = DEFAULT_POINT_LIMIT):
 
 
 def _prepare_dict(ds: xr.Dataset) -> dict:
-    """Prepares dict containing metadata from dataset
+    """Prepares dict containing metadata and values from dataset
 
     Args:
         ds (xr.Dataset): dataset to turn into dict
