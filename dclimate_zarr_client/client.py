@@ -30,7 +30,7 @@ from .ipfs_retrieval import get_dataset_by_ipns_hash, get_ipns_name_hash
 # Users should not select more than this number of data points and coordinates
 DEFAULT_POINT_LIMIT = 100 * 100 * 200_000
 DEFAULT_AREA_LIMIT = (
-    400  # square coordinates, whatever their actual size in km or degrees
+    2500  # square coordinates, whatever their actual size in km or degrees
 )
 
 
@@ -76,6 +76,28 @@ def _check_dataset_size(ds: xr.Dataset, point_limit: int = DEFAULT_POINT_LIMIT):
         )
 
 
+def _prepare_dict(ds: xr.Dataset):
+    var_name = list(ds.data_vars)[0]
+    vals = ds[var_name].values
+    ret_dict = {}
+    dimensions = []
+    ret_dict["unit of measurement"] = ds.attrs["unit of measurement"]
+    if "time" in ds:
+        ret_dict["times"] = (
+            np.datetime_as_string(ds.time.values.flatten(), unit="s").tolist(),
+        )
+        dimensions.append("time")
+    if "longitude" in ds:
+        ret_dict["longitudes"] = ds.longitude.values.flatten().tolist()
+        dimensions.append("longitude")
+    if "latitude" in ds:
+        ret_dict["latitudes"] = ds.latitude.values.flatten().tolist()
+        dimensions.append("latitude")
+    ret_dict["data"] = np.where(~np.isfinite(vals), None, vals).tolist()
+    ret_dict["dimensions_order"] = dimensions
+    return ret_dict
+
+
 def geo_temporal_query(
     ipns_key_str: str,
     point_kwargs: dict = None,
@@ -90,7 +112,7 @@ def geo_temporal_query(
     area_limit: int = DEFAULT_AREA_LIMIT,
     point_limit: int = DEFAULT_POINT_LIMIT,
     output_format: str = "array",
-) -> typing.Union[np.ndarray, bytes]:
+) -> typing.Union[dict, bytes]:
     """Filter an XArray dataset by specified spatial and/or temporal bounds and aggregate \
         according to spatial and/or temporal logic, if desired.
         Before aggregating check that the filtered data fits within specified point and area maximums \
@@ -190,8 +212,11 @@ def geo_temporal_query(
     elif rolling_agg_kwargs:
         ds = rolling_aggregation(ds, **rolling_agg_kwargs)
     # Export
-    var_name = list(ds.data_vars)[0]
     if output_format == "netcdf":
-        return ds[var_name].to_netcdf()
+        # remove nested attributes, which to_netcdf to bytes doesn't support
+        for bad_key in ["bbox", "date range", "tags"]:
+            if bad_key in ds.attrs:
+                del ds.attrs[bad_key]
+        return ds.to_netcdf()
     else:
-        return ds[var_name].values
+        return _prepare_dict(ds)
