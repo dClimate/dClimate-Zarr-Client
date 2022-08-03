@@ -76,7 +76,15 @@ def _check_dataset_size(ds: xr.Dataset, point_limit: int = DEFAULT_POINT_LIMIT):
         )
 
 
-def _prepare_dict(ds: xr.Dataset):
+def _prepare_dict(ds: xr.Dataset) -> dict:
+    """Prepares dict containing metadata from dataset
+
+    Args:
+        ds (xr.Dataset): dataset to turn into dict
+
+    Returns:
+        dict: dict with metadata and data values included
+    """
     var_name = list(ds.data_vars)[0]
     vals = ds[var_name].values
     ret_dict = {}
