@@ -28,7 +28,7 @@ from .geo_utils import (
 from .ipfs_retrieval import get_dataset_by_ipns_hash, get_ipns_name_hash
 
 # Users should not select more than this number of data points and coordinates
-DEFAULT_POINT_LIMIT = 100 * 100 * 200_000
+DEFAULT_POINT_LIMIT = 40 * 40 * 50_000
 DEFAULT_AREA_LIMIT = (
     1600  # square coordinates, whatever their actual size in km or degrees
 )
