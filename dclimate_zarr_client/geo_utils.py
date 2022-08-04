@@ -162,6 +162,9 @@ def get_points_in_polygons(
     ds.rio.set_spatial_dims(x_dim="longitude", y_dim="latitude", inplace=True)
     ds.rio.write_crs("epsg:4326", inplace=True)
     shaped_ds = ds.rio.clip(polygons_mask, epsg_crs, drop=True)
+    data_var = list(shaped_ds.data_vars)[0]
+    if "grid_mapping" in shaped_ds[data_var].attrs:
+        del shaped_ds[data_var].attrs["grid_mapping"]
     return shaped_ds
 
 
