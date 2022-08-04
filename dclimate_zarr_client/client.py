@@ -92,7 +92,7 @@ def _prepare_dict(ds: xr.Dataset) -> dict:
     ret_dict["unit of measurement"] = ds.attrs["unit of measurement"]
     if "time" in ds:
         ret_dict["times"] = (
-            np.datetime_as_string(ds.time.values, unit="s").flatten().tolist(),
+            np.datetime_as_string(ds.time.values, unit="s").flatten().tolist()
         )
         dimensions.append("time")
     if "longitude" in ds:
