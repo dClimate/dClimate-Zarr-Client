@@ -28,9 +28,9 @@ from .geo_utils import (
 from .ipfs_retrieval import get_dataset_by_ipns_hash, get_ipns_name_hash
 
 # Users should not select more than this number of data points and coordinates
-DEFAULT_POINT_LIMIT = 100 * 100 * 200_000
+DEFAULT_POINT_LIMIT = 40 * 40 * 50_000
 DEFAULT_AREA_LIMIT = (
-    400  # square coordinates, whatever their actual size in km or degrees
+    1600  # square coordinates, whatever their actual size in km or degrees
 )
 
 
@@ -50,7 +50,7 @@ def _check_request_area(
     request_area = len(ds.latitude) * len(ds.longitude)
     if request_area > area_limit:
         raise SelectionTooLargeError(
-            f"Selection of ~ {request_area} square coordinates is more than limit of {area_limit}"
+            f"Selection of {request_area} square coordinates is more than limit of {area_limit}"
         )
     elif request_area == 1 and spatial_agg_kwargs:
         raise SelectionTooSmallError(
@@ -72,7 +72,7 @@ def _check_dataset_size(ds: xr.Dataset, point_limit: int = DEFAULT_POINT_LIMIT):
     num_points = len(ds.latitude) * len(ds.longitude) * len(ds.time)
     if num_points > point_limit:
         raise SelectionTooLargeError(
-            f"Selection of ~ {num_points} data points is more than limit of {point_limit}"
+            f"Selection of {num_points} data points is more than limit of {point_limit}"
         )
 
 
@@ -92,7 +92,7 @@ def _prepare_dict(ds: xr.Dataset) -> dict:
     ret_dict["unit of measurement"] = ds.attrs["unit of measurement"]
     if "time" in ds:
         ret_dict["times"] = (
-            np.datetime_as_string(ds.time.values.flatten(), unit="s").tolist(),
+            np.datetime_as_string(ds.time.values, unit="s").flatten().tolist()
         )
         dimensions.append("time")
     if "longitude" in ds:
