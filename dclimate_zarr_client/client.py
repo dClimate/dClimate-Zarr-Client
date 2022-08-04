@@ -47,7 +47,14 @@ def _check_request_area(
         SelectionTooLargeError: Raised when dataset area limit is violated
         SelectionTooSmallError: Raised when dataset is 1x1 and a spatial aggregation method is called
     """
-    request_area = len(ds.latitude) * len(ds.longitude)
+    # Go through each of the dimensions and check whether they exist and if not set them to 1
+    dim_lengths = []
+    for dim in ["latitude", "longitude"]:
+        try:
+            dim_lengths.append(len(ds[dim]))
+        except (KeyError, TypeError):
+            dim_lengths.append(1)
+    request_area = np.prod(dim_lengths)
     if request_area > area_limit:
         raise SelectionTooLargeError(
             f"Selection of {request_area} square coordinates is more than limit of {area_limit}"
@@ -69,7 +76,15 @@ def _check_dataset_size(ds: xr.Dataset, point_limit: int = DEFAULT_POINT_LIMIT):
     Raises:
         SelectionTooLargeError: Raised when dataset size limit is violated
     """
-    num_points = len(ds.latitude) * len(ds.longitude) * len(ds.time)
+    # Go through each of the dimensions and check whether they exist and if not set them to 1
+    dim_lengths = []
+    for dim in ["latitude", "longitude", "time"]:
+        try:
+            dim_lengths.append(len(ds[dim]))
+        except (KeyError, TypeError):
+            dim_lengths.append(1)
+    num_points = np.prod(dim_lengths)
+    # check number of points against the agreed limit
     if num_points > point_limit:
         raise SelectionTooLargeError(
             f"Selection of {num_points} data points is more than limit of {point_limit}"
@@ -190,6 +205,11 @@ def geo_temporal_query(
         raise InvalidExportFormatError(
             "User requested an invalid export format. Only 'array' or 'netcdf' permitted."
         )
+    # Set defaults to avoid Nones accidentally passed by users causing a TypeError
+    if not area_limit:
+        area_limit = DEFAULT_AREA_LIMIT
+    if not point_limit:
+        point_limit = DEFAULT_POINT_LIMIT
     # Use the provided dataset string to find the dataset via IPNS\
     ipns_name_hash = get_ipns_name_hash(ipns_key_str)
     ds = get_dataset_by_ipns_hash(ipns_name_hash, as_of=as_of)
@@ -207,11 +227,8 @@ def geo_temporal_query(
     elif polygon_kwargs:
         ds = get_points_in_polygons(ds, **polygon_kwargs)
     # Check that size of reduced data won't prove too expensive to request and process, according to specified limits
-    try:
-        _check_request_area(ds, area_limit, spatial_agg_kwargs)
-        _check_dataset_size(ds, point_limit)
-    except TypeError:  # TypeError indicates a single point DS, which is always of acceptable size
-        pass
+    _check_request_area(ds, area_limit, spatial_agg_kwargs)
+    _check_dataset_size(ds, point_limit)
     # Perform all requested valid aggregations. First aggregate data spatially, then temporally or on a rolling basis.
     if spatial_agg_kwargs:
         ds = spatial_aggregation(ds, **spatial_agg_kwargs)
