@@ -57,7 +57,7 @@ def test_geo_temporal_query(polygons_mask):
         ipns_key_str="era5_wind_100m_u-hourly",
         point_kwargs={"lat": 39.75, "lon": -118.5},
         rolling_agg_kwargs={"window_size": 5, "agg_method": "mean"},
-        point_limit=None
+        point_limit=None,
     )
     rectangle = client.geo_temporal_query(
         ipns_key_str="era5_wind_100m_u-hourly",
@@ -68,7 +68,7 @@ def test_geo_temporal_query(polygons_mask):
             "max_lon": -119.5,
         },
         spatial_agg_kwargs={"agg_method": "max"},
-        area_limit = None
+        area_limit=None,
     )
     rectangle_nc = client.geo_temporal_query(
         ipns_key_str="era5_wind_100m_u-hourly",
