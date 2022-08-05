@@ -35,6 +35,12 @@ class NoMetadataFoundError(ZarrClientError):
     pass
 
 
+class NoDataFoundError(ZarrClientError):
+    """Raised when user's selection is all NA"""
+
+    pass
+
+
 class InvalidAggregationMethodError(ZarrClientError):
     """Raised when user provides an aggregation method outside of [min, max, median, mean, std, sum]"""
 

@@ -1,3 +1,4 @@
+import datetime
 import pytest
 import dclimate_zarr_client.client as client
 import xarray as xr
@@ -8,6 +9,7 @@ from dclimate_zarr_client.dclimate_zarr_errors import (
     SelectionTooLargeError,
     SelectionTooSmallError,
     ConflictingGeoRequestError,
+    NoDataFoundError,
     ConflictingAggregationRequestError,
     InvalidExportFormatError,
 )
@@ -192,3 +194,12 @@ def test_selection_size_conflicts(oversized_polygons_mask):
 
     assert too_large_area_exc_info.match("square coordinates is more than limit of")
     assert too_many_points_exc_info.match("data points is more than limit of 100")
+
+
+def test_no_data_in_selection_error():
+    with pytest.raises(NoDataFoundError):
+        client.geo_temporal_query(
+            ipns_key_str="era5_wind_100m_u-hourly",
+            time_range=[datetime.datetime(1900, 1, 1), datetime.datetime(1910, 1, 1)],
+            point_kwargs={"lat": 39.75, "lon": -118.5},
+        )

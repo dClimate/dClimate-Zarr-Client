@@ -14,6 +14,7 @@ from .dclimate_zarr_errors import (
     ConflictingGeoRequestError,
     ConflictingAggregationRequestError,
     InvalidExportFormatError,
+    NoDataFoundError,
 )
 from .geo_utils import (
     get_data_in_time_range,
@@ -89,6 +90,20 @@ def _check_dataset_size(ds: xr.Dataset, point_limit: int = DEFAULT_POINT_LIMIT):
         raise SelectionTooLargeError(
             f"Selection of {num_points} data points is more than limit of {point_limit}"
         )
+
+
+def _check_has_data(ds: xr.Dataset):
+    """Checks if data is all NA
+
+    Args:
+        ds (xr.Dataset): dataset to check
+
+    Raises:
+        NoDataFoundError: Raised when data is all NA
+    """
+    var_name = list(ds.data_vars)[0]
+    if ds[var_name].isnull().all():
+        raise NoDataFoundError("Selection is empty or all NA")
 
 
 def _prepare_dict(ds: xr.Dataset) -> dict:
@@ -229,6 +244,8 @@ def geo_temporal_query(
     # Check that size of reduced data won't prove too expensive to request and process, according to specified limits
     _check_request_area(ds, area_limit, spatial_agg_kwargs)
     _check_dataset_size(ds, point_limit)
+    _check_has_data(ds)
+
     # Perform all requested valid aggregations. First aggregate data spatially, then temporally or on a rolling basis.
     if spatial_agg_kwargs:
         ds = spatial_aggregation(ds, **spatial_agg_kwargs)
