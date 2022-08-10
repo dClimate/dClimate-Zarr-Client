@@ -41,6 +41,12 @@ class NoDataFoundError(ZarrClientError):
     pass
 
 
+class DatasetNotFoundError(ZarrClientError):
+    """Raised when dataset not available over IPNS"""
+
+    pass
+
+
 class InvalidAggregationMethodError(ZarrClientError):
     """Raised when user provides an aggregation method outside of [min, max, median, mean, std, sum]"""
 

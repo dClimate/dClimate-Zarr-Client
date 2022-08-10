@@ -9,14 +9,14 @@ import numpy as np
 import xarray as xr
 
 from .dclimate_zarr_errors import (
-    SelectionTooLargeError,
-    SelectionTooSmallError,
     ConflictingGeoRequestError,
     ConflictingAggregationRequestError,
     InvalidExportFormatError,
-    NoDataFoundError,
 )
 from .geo_utils import (
+    check_request_area,
+    check_dataset_size,
+    check_has_data,
     get_data_in_time_range,
     get_single_point,
     get_points_in_circle,
@@ -25,85 +25,10 @@ from .geo_utils import (
     rolling_aggregation,
     spatial_aggregation,
     temporal_aggregation,
+    DEFAULT_POINT_LIMIT,
+    DEFAULT_AREA_LIMIT,
 )
 from .ipfs_retrieval import get_dataset_by_ipns_hash, get_ipns_name_hash
-
-# Users should not select more than this number of data points and coordinates
-DEFAULT_POINT_LIMIT = 40 * 40 * 50_000
-DEFAULT_AREA_LIMIT = (
-    1600  # square coordinates, whatever their actual size in km or degrees
-)
-
-
-def _check_request_area(
-    ds: xr.Dataset, area_limit: int = DEFAULT_AREA_LIMIT, spatial_agg_kwargs=None
-):
-    """Checks the total area of the request
-
-    Args:
-        ds (xr.Dataset): dataset to check area of
-        point_limit (int, optional): limit for dataset area. Defaults to DEFAULT_AREA_LIMIT.
-
-    Raises:
-        SelectionTooLargeError: Raised when dataset area limit is violated
-        SelectionTooSmallError: Raised when dataset is 1x1 and a spatial aggregation method is called
-    """
-    # Go through each of the dimensions and check whether they exist and if not set them to 1
-    dim_lengths = []
-    for dim in ["latitude", "longitude"]:
-        try:
-            dim_lengths.append(len(ds[dim]))
-        except (KeyError, TypeError):
-            dim_lengths.append(1)
-    request_area = np.prod(dim_lengths)
-    if request_area > area_limit:
-        raise SelectionTooLargeError(
-            f"Selection of {request_area} square coordinates is more than limit of {area_limit}"
-        )
-    elif request_area == 1 and spatial_agg_kwargs:
-        raise SelectionTooSmallError(
-            "Selection of 1 square degree is incompatible with spatial aggregation as it will return all 0s."
-            " Consider re-submitting with a larger target area or radius."
-        )
-
-
-def _check_dataset_size(ds: xr.Dataset, point_limit: int = DEFAULT_POINT_LIMIT):
-    """Checks how many data points are in a dataset
-
-    Args:
-        ds (xr.Dataset): dataset to check size of
-        point_limit (int, optional): limit for dataset size. Defaults to DEFAULT_POINT_LIMIT.
-
-    Raises:
-        SelectionTooLargeError: Raised when dataset size limit is violated
-    """
-    # Go through each of the dimensions and check whether they exist and if not set them to 1
-    dim_lengths = []
-    for dim in ["latitude", "longitude", "time"]:
-        try:
-            dim_lengths.append(len(ds[dim]))
-        except (KeyError, TypeError):
-            dim_lengths.append(1)
-    num_points = np.prod(dim_lengths)
-    # check number of points against the agreed limit
-    if num_points > point_limit:
-        raise SelectionTooLargeError(
-            f"Selection of {num_points} data points is more than limit of {point_limit}"
-        )
-
-
-def _check_has_data(ds: xr.Dataset):
-    """Checks if data is all NA
-
-    Args:
-        ds (xr.Dataset): dataset to check
-
-    Raises:
-        NoDataFoundError: Raised when data is all NA
-    """
-    var_name = list(ds.data_vars)[0]
-    if ds[var_name].isnull().all():
-        raise NoDataFoundError("Selection is empty or all NA")
 
 
 def _prepare_dict(ds: xr.Dataset) -> dict:
@@ -242,10 +167,9 @@ def geo_temporal_query(
     elif polygon_kwargs:
         ds = get_points_in_polygons(ds, **polygon_kwargs)
     # Check that size of reduced data won't prove too expensive to request and process, according to specified limits
-    _check_request_area(ds, area_limit, spatial_agg_kwargs)
-    _check_dataset_size(ds, point_limit)
-    _check_has_data(ds)
-
+    check_request_area(ds, area_limit, spatial_agg_kwargs)
+    check_dataset_size(ds, point_limit)
+    check_has_data(ds)
     # Perform all requested valid aggregations. First aggregate data spatially, then temporally or on a rolling basis.
     if spatial_agg_kwargs:
         ds = spatial_aggregation(ds, **spatial_agg_kwargs)

@@ -9,7 +9,87 @@ from shapely.ops import unary_union
 from dclimate_zarr_client.dclimate_zarr_errors import (
     InvalidAggregationMethodError,
     InvalidTimePeriodError,
+    SelectionTooLargeError,
+    SelectionTooSmallError,
+    NoDataFoundError,
 )
+
+# Users should not select more than this number of data points and coordinates
+DEFAULT_POINT_LIMIT = 40 * 40 * 50_000
+DEFAULT_AREA_LIMIT = (
+    1600  # square coordinates, whatever their actual size in km or degrees
+)
+
+
+def check_request_area(
+    ds: xr.Dataset, area_limit: int = DEFAULT_AREA_LIMIT, spatial_agg_kwargs=None
+):
+    """Checks the total area of the request
+
+    Args:
+        ds (xr.Dataset): dataset to check area of
+        point_limit (int, optional): limit for dataset area. Defaults to DEFAULT_AREA_LIMIT.
+
+    Raises:
+        SelectionTooLargeError: Raised when dataset area limit is violated
+        SelectionTooSmallError: Raised when dataset is 1x1 and a spatial aggregation method is called
+    """
+    # Go through each of the dimensions and check whether they exist and if not set them to 1
+    dim_lengths = []
+    for dim in ["latitude", "longitude"]:
+        try:
+            dim_lengths.append(len(ds[dim]))
+        except (KeyError, TypeError):
+            dim_lengths.append(1)
+    request_area = np.prod(dim_lengths)
+    if request_area > area_limit:
+        raise SelectionTooLargeError(
+            f"Selection of {request_area} square coordinates is more than limit of {area_limit}"
+        )
+    elif request_area == 1 and spatial_agg_kwargs:
+        raise SelectionTooSmallError(
+            "Selection of 1 square degree is incompatible with spatial aggregation as it will return all 0s."
+            " Consider re-submitting with a larger target area or radius."
+        )
+
+
+def check_dataset_size(ds: xr.Dataset, point_limit: int = DEFAULT_POINT_LIMIT):
+    """Checks how many data points are in a dataset
+
+    Args:
+        ds (xr.Dataset): dataset to check size of
+        point_limit (int, optional): limit for dataset size. Defaults to DEFAULT_POINT_LIMIT.
+
+    Raises:
+        SelectionTooLargeError: Raised when dataset size limit is violated
+    """
+    # Go through each of the dimensions and check whether they exist and if not set them to 1
+    dim_lengths = []
+    for dim in ["latitude", "longitude", "time"]:
+        try:
+            dim_lengths.append(len(ds[dim]))
+        except (KeyError, TypeError):
+            dim_lengths.append(1)
+    num_points = np.prod(dim_lengths)
+    # check number of points against the agreed limit
+    if num_points > point_limit:
+        raise SelectionTooLargeError(
+            f"Selection of {num_points} data points is more than limit of {point_limit}"
+        )
+
+
+def check_has_data(ds: xr.Dataset):
+    """Checks if data is all NA
+
+    Args:
+        ds (xr.Dataset): dataset to check
+
+    Raises:
+        NoDataFoundError: Raised when data is all NA
+    """
+    var_name = list(ds.data_vars)[0]
+    if ds[var_name].isnull().all():
+        raise NoDataFoundError("Selection is empty or all NA")
 
 
 def _check_input_parameters(time_period=None, agg_method=None):
@@ -161,7 +241,11 @@ def get_points_in_polygons(
     """
     ds.rio.set_spatial_dims(x_dim="longitude", y_dim="latitude", inplace=True)
     ds.rio.write_crs("epsg:4326", inplace=True)
-    shaped_ds = ds.rio.clip(polygons_mask, epsg_crs, drop=True)
+    mask = gpd.geoseries.GeoSeries(polygons_mask).set_crs(epsg_crs).to_crs(4326)
+    min_lon, min_lat, max_lon, max_lat = mask.total_bounds
+    box_ds = get_points_in_rectangle(ds, min_lat, min_lon, max_lat, max_lon)
+    check_request_area(box_ds)
+    shaped_ds = box_ds.rio.clip(mask, 4326, drop=True)
     data_var = list(shaped_ds.data_vars)[0]
     if "grid_mapping" in shaped_ds[data_var].attrs:
         del shaped_ds[data_var].attrs["grid_mapping"]
