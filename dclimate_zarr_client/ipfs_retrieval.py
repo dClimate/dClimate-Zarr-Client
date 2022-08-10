@@ -75,7 +75,7 @@ def get_ipns_name_hash(ipns_key_str) -> str:
     try:
         return ipns_rec_dict[ipns_key_str]
     except KeyError:
-        raise DatasetNotFoundError
+        raise DatasetNotFoundError("Invalid dataset name")
 
 
 def _get_relevant_metadata(ipfs_head_hash: str, as_of: datetime.datetime) -> dict:
