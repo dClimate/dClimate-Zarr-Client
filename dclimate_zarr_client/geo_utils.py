@@ -226,7 +226,7 @@ def get_points_in_rectangle(
 def get_points_in_polygons(
     ds: xr.Dataset,
     polygons_mask: gpd.array.GeometryArray,
-    epsg_crs: int,
+    epsg_crs: int = 4326,
 ) -> xr.Dataset:
     """Subsets dataset to points within arbitrary shape. Requires rioxarray to be installed
 
