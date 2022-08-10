@@ -165,7 +165,7 @@ def geo_temporal_query(
     elif rectangle_kwargs:
         ds = get_points_in_rectangle(ds, **rectangle_kwargs)
     elif polygon_kwargs:
-        ds = get_points_in_polygons(ds, **polygon_kwargs)
+        ds = get_points_in_polygons(ds, **polygon_kwargs, area_limit=area_limit)
     # Check that size of reduced data won't prove too expensive to request and process, according to specified limits
     check_request_area(ds, area_limit, spatial_agg_kwargs)
     check_dataset_size(ds, point_limit)
