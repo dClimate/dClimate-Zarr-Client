@@ -227,6 +227,7 @@ def get_points_in_polygons(
     ds: xr.Dataset,
     polygons_mask: gpd.array.GeometryArray,
     epsg_crs: int,
+    area_limit=DEFAULT_AREA_LIMIT,
 ) -> xr.Dataset:
     """Subsets dataset to points within arbitrary shape. Requires rioxarray to be installed
 
@@ -244,7 +245,7 @@ def get_points_in_polygons(
     mask = gpd.geoseries.GeoSeries(polygons_mask).set_crs(epsg_crs).to_crs(4326)
     min_lon, min_lat, max_lon, max_lat = mask.total_bounds
     box_ds = get_points_in_rectangle(ds, min_lat, min_lon, max_lat, max_lon)
-    check_request_area(box_ds)
+    check_request_area(box_ds, area_limit=area_limit)
     shaped_ds = box_ds.rio.clip(mask, 4326, drop=True)
     data_var = list(shaped_ds.data_vars)[0]
     if "grid_mapping" in shaped_ds[data_var].attrs:
