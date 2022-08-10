@@ -5,7 +5,7 @@ import requests
 import xarray as xr
 from ipldstore import get_ipfs_mapper
 
-from .dclimate_zarr_errors import NoMetadataFoundError
+from .dclimate_zarr_errors import DatasetNotFoundError, NoMetadataFoundError
 
 DEFAULT_HOST = "http://127.0.0.1:5001/api/v0"
 
@@ -72,7 +72,10 @@ def get_ipns_name_hash(ipns_key_str) -> str:
     for name_hash_pair in r.json()["Keys"]:
         ipns_records.append(tuple([vals for vals in name_hash_pair.values()]))
     ipns_rec_dict.update(ipns_records)
-    return ipns_rec_dict[ipns_key_str]
+    try:
+        return ipns_rec_dict[ipns_key_str]
+    except KeyError:
+        raise DatasetNotFoundError
 
 
 def _get_relevant_metadata(ipfs_head_hash: str, as_of: datetime.datetime) -> dict:
