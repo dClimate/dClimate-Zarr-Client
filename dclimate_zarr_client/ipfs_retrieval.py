@@ -136,4 +136,4 @@ def get_dataset_by_ipns_hash(
         metadata = _get_relevant_metadata(ipfs_head_hash, as_of=as_of)
     else:
         metadata = _get_single_metadata(ipfs_head_hash)
-    return get_dataset_by_ipfs_hash(metadata["assets"]["analytic"]["href"]["/"])
+    return get_dataset_by_ipfs_hash(metadata["assets"]["zmetadata"]["href"]["/"])
