@@ -25,3 +25,11 @@ def polygons_mask():
         pathlib.Path(__file__).parent / "etc" / "central_northern_ca_counties.geojson"
     )
     return shp.geometry.values
+
+
+@pytest.fixture
+def points_mask():
+    points = gpd.read_file(
+        pathlib.Path(__file__).parent / "etc" / "northern_ca_points.geojson"
+    )
+    return points.geometry.values

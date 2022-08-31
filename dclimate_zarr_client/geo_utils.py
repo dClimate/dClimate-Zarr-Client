@@ -137,6 +137,15 @@ def get_single_point(ds: xr.Dataset, lat: float, lon: float) -> xr.Dataset:
     return ds.sel(latitude=lat, longitude=lon, method="nearest")
 
 
+def get_multiple_points(
+    ds: xr.Dataset, points_mask: gpd.array.GeometryArray, epsg_crs: int
+) -> dict:
+    mask = list(gpd.geoseries.GeoSeries(points_mask).set_crs(epsg_crs).to_crs(4326))
+    lats, lons = [point.y for point in mask], [point.x for point in mask]
+    lats, lons = xr.DataArray(lats, dims="point"), xr.DataArray(lons, dims="point")
+    return ds.sel(latitude=lats, longitude=lons, method="nearest")
+
+
 def _haversine(
     lat1: typing.Union[np.ndarray, float],
     lon1: typing.Union[np.ndarray, float],

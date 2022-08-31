@@ -48,7 +48,7 @@ def default_session_fixture(module_mocker):
     )
 
 
-def test_geo_temporal_query(polygons_mask):
+def test_geo_temporal_query(polygons_mask, points_mask):
     """
     Test the `geo_temporal_query` method's functionalities: geographic queries, aggregation methods, and export formats
     Geographic queries include point, rectangle, circle, and polygon queries
@@ -95,6 +95,28 @@ def test_geo_temporal_query(polygons_mask):
         spatial_agg_kwargs={"agg_method": "mean"},
         rolling_agg_kwargs={"window_size": 5, "agg_method": "mean"},
     )
+
+    points_arr = client.geo_temporal_query(
+        ipns_key_str="era5_wind_100m_u-hourly",
+        multiple_points_kwargs={"points_mask": points_mask, "epsg_crs": "epsg:4326"},
+    )
+    points_nc = client.geo_temporal_query(
+        ipns_key_str="era5_wind_100m_u-hourly",
+        multiple_points_kwargs={"points_mask": points_mask, "epsg_crs": "epsg:4326"},
+        output_format="netcdf",
+    )
+
+    points_nc = xr.open_dataset(points_nc)
+
+    for i, (lat, lon) in enumerate(points_arr["points"]):
+        nc_vals = (
+            points_nc.where(
+                (points_nc.latitude == lat) & (points_nc.longitude == lon), drop=True
+            )
+            .u100.values.flatten()
+            .tolist()
+        )
+        assert nc_vals == points_arr["data"][i]
 
     assert point["data"][0] == -2.013934326171875
     assert rectangle["data"][0] == -1.7886962890625
