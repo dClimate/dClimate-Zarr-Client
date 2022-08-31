@@ -21,6 +21,7 @@ from .geo_utils import (
     get_single_point,
     get_points_in_circle,
     get_points_in_polygons,
+    get_multiple_points,
     get_points_in_rectangle,
     rolling_aggregation,
     spatial_aggregation,
@@ -50,13 +51,19 @@ def _prepare_dict(ds: xr.Dataset) -> dict:
             np.datetime_as_string(ds.time.values, unit="s").flatten().tolist()
         )
         dimensions.append("time")
-    if "longitude" in ds:
-        ret_dict["longitudes"] = ds.longitude.values.flatten().tolist()
-        dimensions.append("longitude")
-    if "latitude" in ds:
-        ret_dict["latitudes"] = ds.latitude.values.flatten().tolist()
-        dimensions.append("latitude")
-    ret_dict["data"] = np.where(~np.isfinite(vals), None, vals).tolist()
+    if "point" in ds.dims:
+        ret_dict["points"] = list(zip(ds.latitude.values, ds.longitude.values))
+        ret_dict["point_coords_order"] = ["latitude", "longitude"]
+        dimensions.insert(0, "point")
+        ret_dict["data"] = np.where(~np.isfinite(vals), None, vals).T.tolist()
+    else:
+        if "longitude" in ds:
+            ret_dict["longitudes"] = ds.longitude.values.flatten().tolist()
+            dimensions.append("longitude")
+        if "latitude" in ds:
+            ret_dict["latitudes"] = ds.latitude.values.flatten().tolist()
+            dimensions.append("latitude")
+        ret_dict["data"] = np.where(~np.isfinite(vals), None, vals).tolist()
     ret_dict["dimensions_order"] = dimensions
     return ret_dict
 
@@ -67,6 +74,7 @@ def geo_temporal_query(
     circle_kwargs: dict = None,
     rectangle_kwargs: dict = None,
     polygon_kwargs: dict = None,
+    multiple_points_kwargs: dict = None,
     spatial_agg_kwargs: dict = None,
     temporal_agg_kwargs: dict = None,
     rolling_agg_kwargs: dict = None,
@@ -121,6 +129,7 @@ def geo_temporal_query(
                     circle_kwargs,
                     rectangle_kwargs,
                     polygon_kwargs,
+                    multiple_points_kwargs,
                     point_kwargs,
                 ]
                 if kwarg_dict is not None
@@ -166,10 +175,16 @@ def geo_temporal_query(
         ds = get_points_in_rectangle(ds, **rectangle_kwargs)
     elif polygon_kwargs:
         ds = get_points_in_polygons(ds, **polygon_kwargs, area_limit=area_limit)
+    elif multiple_points_kwargs:
+        ds = get_multiple_points(ds, **multiple_points_kwargs)
     # Check that size of reduced data won't prove too expensive to request and process, according to specified limits
     check_request_area(ds, area_limit, spatial_agg_kwargs)
     check_dataset_size(ds, point_limit)
     check_has_data(ds)
+    if multiple_points_kwargs:
+        # Aggregations pull whole dataset when ds is structured as multiple points. Forcing xarray to do subsetting
+        # before aggregation drastically speeds up agg
+        ds = ds.compute()
     # Perform all requested valid aggregations. First aggregate data spatially, then temporally or on a rolling basis.
     if spatial_agg_kwargs:
         ds = spatial_aggregation(ds, **spatial_agg_kwargs)
