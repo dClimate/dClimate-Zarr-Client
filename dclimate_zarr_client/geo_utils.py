@@ -252,8 +252,7 @@ def get_points_in_polygons(
     ds.rio.set_spatial_dims(x_dim="longitude", y_dim="latitude", inplace=True)
     ds.rio.write_crs("epsg:4326", inplace=True)
     mask = gpd.geoseries.GeoSeries(polygons_mask).set_crs(epsg_crs).to_crs(4326)
-    min_lon, min_lat, max_lon, max_lat = mask.total_bounds
-    box_ds = get_points_in_rectangle(ds, min_lat, min_lon, max_lat, max_lon)
+    box_ds = ds.rio.clip_box(*mask.total_bounds, auto_expand=True)
     check_request_area(box_ds, area_limit=area_limit)
     shaped_ds = box_ds.rio.clip(mask, 4326, drop=True)
     data_var = list(shaped_ds.data_vars)[0]
