@@ -10,7 +10,6 @@ from dclimate_zarr_client.dclimate_zarr_errors import (
     InvalidAggregationMethodError,
     InvalidTimePeriodError,
     SelectionTooLargeError,
-    SelectionTooSmallError,
     NoDataFoundError,
 )
 
@@ -45,11 +44,6 @@ def check_request_area(
     if request_area > area_limit:
         raise SelectionTooLargeError(
             f"Selection of {request_area} square coordinates is more than limit of {area_limit}"
-        )
-    elif request_area == 1 and spatial_agg_kwargs:
-        raise SelectionTooSmallError(
-            "Selection of 1 square degree is incompatible with spatial aggregation as it will return all 0s."
-            " Consider re-submitting with a larger target area or radius."
         )
 
 
