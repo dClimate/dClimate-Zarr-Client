@@ -31,7 +31,6 @@ def check_request_area(
 
     Raises:
         SelectionTooLargeError: Raised when dataset area limit is violated
-        SelectionTooSmallError: Raised when dataset is 1x1 and a spatial aggregation method is called
     """
     # Go through each of the dimensions and check whether they exist and if not set them to 1
     dim_lengths = []
