@@ -7,7 +7,6 @@ import zarr
 
 from dclimate_zarr_client.dclimate_zarr_errors import (
     SelectionTooLargeError,
-    SelectionTooSmallError,
     ConflictingGeoRequestError,
     NoDataFoundError,
     ConflictingAggregationRequestError,
@@ -199,13 +198,6 @@ def test_selection_size_conflicts(oversized_polygons_mask):
             },
             area_limit=100,
         )
-    with pytest.raises(SelectionTooSmallError):
-        client.geo_temporal_query(
-            ipns_key_str="era5_wind_100m_u-hourly",
-            circle_kwargs={"center_lat": 40, "center_lon": -120, "radius": 10},
-            spatial_agg_kwargs={"agg_method": "std"},
-        )
-
     with pytest.raises(SelectionTooLargeError) as too_many_points_exc_info:
         client.geo_temporal_query(
             ipns_key_str="era5_wind_100m_u-hourly",

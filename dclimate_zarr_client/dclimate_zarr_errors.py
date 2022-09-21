@@ -10,13 +10,6 @@ class SelectionTooLargeError(ZarrClientError):
     pass
 
 
-class SelectionTooSmallError(ZarrClientError):
-    """Raised when user queries a latitude or longtidue range resulting in a single point \
-        and this would conflict with a specified aggregation method"""
-
-    pass
-
-
 class ConflictingGeoRequestError(ZarrClientError):
     """Raised when user requests more than one type of geographic query"""
 
