@@ -68,7 +68,6 @@ def test_geo_temporal_query(polygons_mask, points_mask):
             "max_lat": 40.25,
             "max_lon": -119.5,
         },
-        spatial_agg_kwargs={"agg_method": "max"},
         area_limit=None,
     )
     rectangle_nc = client.geo_temporal_query(
@@ -118,7 +117,7 @@ def test_geo_temporal_query(polygons_mask, points_mask):
         assert nc_vals == points_arr["data"][i]
 
     assert point["data"][0] == -2.013934326171875
-    assert rectangle["data"][0] == -1.7886962890625
+    assert rectangle["data"][0][0][0] == -1.9547119140625
     assert rectangle_nc[0] == 67
     assert circle["data"][0] == 0.44366344809532166
     assert polygon["data"][0] == -1.1927716255187988

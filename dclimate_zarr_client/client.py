@@ -57,12 +57,10 @@ def _prepare_dict(ds: xr.Dataset) -> dict:
         dimensions.insert(0, "point")
         ret_dict["data"] = np.where(~np.isfinite(vals), None, vals).T.tolist()
     else:
-        if "longitude" in ds:
-            ret_dict["longitudes"] = ds.longitude.values.flatten().tolist()
-            dimensions.append("longitude")
-        if "latitude" in ds:
-            ret_dict["latitudes"] = ds.latitude.values.flatten().tolist()
-            dimensions.append("latitude")
+        for dim in ds[var_name].dims:
+            if dim != "time":
+                ret_dict[f"{dim}s"] = ds[dim].values.flatten().tolist()
+                dimensions.append(dim)
         ret_dict["data"] = np.where(~np.isfinite(vals), None, vals).tolist()
     ret_dict["dimensions_order"] = dimensions
     return ret_dict
