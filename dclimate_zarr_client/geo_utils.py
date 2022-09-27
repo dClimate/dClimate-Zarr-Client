@@ -305,9 +305,10 @@ def spatial_aggregation(
         xr.Dataset: subsetted dataset
     """
     _check_input_parameters(agg_method=agg_method)
+    spatial_dims = [dim for dim in ds.dims if dim != "time"]
     # Aggregate by the specified method across all time periods
     aggregator = getattr(xr.Dataset, agg_method)
-    return aggregator(ds.groupby("time"), ..., keep_attrs=True)
+    return aggregator(ds, spatial_dims, keep_attrs=True)
 
 
 def temporal_aggregation(
