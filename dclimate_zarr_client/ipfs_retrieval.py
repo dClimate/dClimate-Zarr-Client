@@ -8,6 +8,7 @@ from ipldstore import get_ipfs_mapper
 from .dclimate_zarr_errors import DatasetNotFoundError, NoMetadataFoundError
 
 DEFAULT_HOST = "http://127.0.0.1:5001/api/v0"
+VALID_TIME_SPANS = ["daily", "hourly"]
 
 
 def _get_single_metadata(ipfs_hash: str) -> dict:
@@ -68,6 +69,7 @@ def get_ipns_name_hash(ipns_key_str) -> str:
         str: ipfsname hash corresponding to the provided string
     """
     r = requests.post(f"{DEFAULT_HOST}/key/list", params={"decoder": "json"})
+    r.raise_for_status()
     ipns_rec_dict, ipns_records = {}, []
     for name_hash_pair in r.json()["Keys"]:
         ipns_records.append(tuple([vals for vals in name_hash_pair.values()]))
@@ -137,7 +139,40 @@ def get_dataset_by_ipns_hash(
     else:
         metadata = _get_single_metadata(ipfs_head_hash)
     try:
-        dataset_hash = get_dataset_by_ipfs_hash(metadata["assets"]["zmetadata"]["href"]["/"])
+        dataset_hash = get_dataset_by_ipfs_hash(
+            metadata["assets"]["zmetadata"]["href"]["/"]
+        )
     except KeyError:
-        dataset_hash = get_dataset_by_ipfs_hash(metadata["assets"]["analytic"]["href"]["/"])
+        dataset_hash = get_dataset_by_ipfs_hash(
+            metadata["assets"]["analytic"]["href"]["/"]
+        )
     return dataset_hash
+
+
+def get_metadata_by_key(key: str) -> dict:
+    """Get STAC metadata for specific dataset
+
+    Args:
+        key (str): dataset key
+
+    Returns:
+        dict: STAC metadata corresponding to key
+    """
+    ipns_name = get_ipns_name_hash(key)
+    ipfs_hash = _resolve_ipns_name_hash(ipns_name)
+    return _get_single_metadata(ipfs_hash)
+
+
+def list_datasets() -> typing.List[str]:
+    """List datasets available on IPFS node
+
+    Returns:
+        typing.List[str]: List of available datasets' keys
+    """
+    r = requests.post(f"{DEFAULT_HOST}/key/list", params={"decoder": "json"})
+    r.raise_for_status()
+    return [
+        name_dict["Name"]
+        for name_dict in r.json()["Keys"]
+        if any([span in name_dict["Name"] for span in VALID_TIME_SPANS])
+    ]
