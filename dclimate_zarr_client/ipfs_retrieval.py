@@ -8,7 +8,7 @@ from ipldstore import get_ipfs_mapper
 from .dclimate_zarr_errors import DatasetNotFoundError, NoMetadataFoundError
 
 DEFAULT_HOST = "http://127.0.0.1:5001/api/v0"
-VALID_TIME_SPANS = ["daily", "hourly"]
+VALID_TIME_SPANS = ["daily", "hourly", "weekly"]
 
 
 def _get_single_metadata(ipfs_hash: str) -> dict:
