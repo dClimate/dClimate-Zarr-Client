@@ -132,16 +132,20 @@ def get_single_point(ds: xr.Dataset, lat: float, lon: float, snap_to_grid: bool 
     try:
         return ds.sel(latitude=lat, longitude=lon, method="nearest" if snap_to_grid else None)
     except KeyError:
-        raise NoDataFoundError("User did not request snap_to_grid, but exact coord not in dataset")
+        raise NoDataFoundError("User requested not to snap_to_grid, but exact coord not in dataset")
 
 
 def get_multiple_points(
-    ds: xr.Dataset, points_mask: gpd.array.GeometryArray, epsg_crs: int
+    ds: xr.Dataset, points_mask: gpd.array.GeometryArray, epsg_crs: int, snap_to_grid: bool = True
 ) -> dict:
     mask = list(gpd.geoseries.GeoSeries(points_mask).set_crs(epsg_crs).to_crs(4326))
     lats, lons = [point.y for point in mask], [point.x for point in mask]
     lats, lons = xr.DataArray(lats, dims="point"), xr.DataArray(lons, dims="point")
-    return ds.sel(latitude=lats, longitude=lons, method="nearest")
+    try:
+        return ds.sel(latitude=lats, longitude=lons, method="nearest" if snap_to_grid else None)
+    except KeyError:
+        raise NoDataFoundError(
+            "User requested not to snap_to_grid, but at least one coord not in dataset")
 
 
 def _haversine(
