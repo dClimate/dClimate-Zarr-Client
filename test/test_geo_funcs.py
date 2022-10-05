@@ -1,4 +1,7 @@
+import pytest
+
 import dclimate_zarr_client.geo_utils as geo_utils
+from dclimate_zarr_client.dclimate_zarr_errors import NoDataFoundError
 
 
 def test_get_single_point(input_ds):
@@ -7,6 +10,11 @@ def test_get_single_point(input_ds):
     """
     point = geo_utils.get_single_point(input_ds, 40, -120)
     assert point["u100"].values.shape == (168,)
+
+
+def test_get_single_point_misaligned_error(input_ds):
+    with pytest.raises(NoDataFoundError):
+        geo_utils.get_single_point(input_ds, 40, -120.1, snap_to_grid=False)
 
 
 def test_get_points_in_circle(input_ds):

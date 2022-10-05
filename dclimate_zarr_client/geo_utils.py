@@ -116,18 +116,23 @@ def _check_input_parameters(time_period=None, agg_method=None):
         )
 
 
-def get_single_point(ds: xr.Dataset, lat: float, lon: float) -> xr.Dataset:
+def get_single_point(ds: xr.Dataset, lat: float, lon: float, snap_to_grid: bool = True) -> xr.Dataset:
     """Gets a dataset corresponding to the full time series for a single point in a dataset
 
     Args:
         ds (xr.Dataset): dataset to subset
         lat (float): latitude coordinate
         lon (float): longitude coordinate
+        snap_to_grid (bool): when True, find nearest point to lat, lon in dataset.
+            When false, error out when exact lat, lon is not on dataset grid.
 
     Returns:
         xr.Dataset: subsetted dataset
     """
-    return ds.sel(latitude=lat, longitude=lon, method="nearest")
+    try:
+        return ds.sel(latitude=lat, longitude=lon, method="nearest" if snap_to_grid else None)
+    except KeyError:
+        raise NoDataFoundError("User did not request snap_to_grid, but exact coord not in dataset")
 
 
 def get_multiple_points(
