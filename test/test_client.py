@@ -216,3 +216,11 @@ def test_no_data_in_selection_error():
             time_range=[datetime.datetime(1900, 1, 1), datetime.datetime(1910, 1, 1)],
             point_kwargs={"lat": 39.75, "lon": -118.5},
         )
+
+
+def test_multiple_points_not_on_grid(points_mask):
+    with pytest.raises(NoDataFoundError):
+        client.geo_temporal_query(
+            ipns_key_str="era5_wind_100m_u-hourly",
+            multiple_points_kwargs={"points_mask": points_mask, "epsg_crs": "epsg:4326", "snap_to_grid": False}
+        )
