@@ -15,35 +15,6 @@ from dclimate_zarr_client.dclimate_zarr_errors import (
 
 # Users should not select more than this number of data points and coordinates
 DEFAULT_POINT_LIMIT = 40 * 40 * 50_000
-DEFAULT_AREA_LIMIT = (
-    1600  # square coordinates, whatever their actual size in km or degrees
-)
-
-
-def check_request_area(
-    ds: xr.Dataset, area_limit: int = DEFAULT_AREA_LIMIT, spatial_agg_kwargs=None
-):
-    """Checks the total area of the request
-
-    Args:
-        ds (xr.Dataset): dataset to check area of
-        point_limit (int, optional): limit for dataset area. Defaults to DEFAULT_AREA_LIMIT.
-
-    Raises:
-        SelectionTooLargeError: Raised when dataset area limit is violated
-    """
-    # Go through each of the dimensions and check whether they exist and if not set them to 1
-    dim_lengths = []
-    for dim in ["latitude", "longitude"]:
-        try:
-            dim_lengths.append(len(ds[dim]))
-        except (KeyError, TypeError):
-            dim_lengths.append(1)
-    request_area = np.prod(dim_lengths)
-    if request_area > area_limit:
-        raise SelectionTooLargeError(
-            f"Selection of {request_area} square coordinates is more than limit of {area_limit}"
-        )
 
 
 def check_dataset_size(ds: xr.Dataset, point_limit: int = DEFAULT_POINT_LIMIT):
@@ -242,7 +213,7 @@ def get_points_in_polygons(
     ds: xr.Dataset,
     polygons_mask: gpd.array.GeometryArray,
     epsg_crs: int = 4326,
-    area_limit=DEFAULT_AREA_LIMIT,
+    point_limit=DEFAULT_POINT_LIMIT,
 ) -> xr.Dataset:
     """Subsets dataset to points within arbitrary shape. Requires rioxarray to be installed
 
@@ -260,7 +231,7 @@ def get_points_in_polygons(
     mask = gpd.geoseries.GeoSeries(polygons_mask).set_crs(epsg_crs).to_crs(4326)
     min_lon, min_lat, max_lon, max_lat = mask.total_bounds
     box_ds = get_points_in_rectangle(ds, min_lat, min_lon, max_lat, max_lon)
-    check_request_area(box_ds, area_limit=area_limit)
+    check_dataset_size(box_ds, point_limit=point_limit)
     shaped_ds = box_ds.rio.clip(mask, 4326, drop=True)
     data_var = list(shaped_ds.data_vars)[0]
     if "grid_mapping" in shaped_ds[data_var].attrs:
