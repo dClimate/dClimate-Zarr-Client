@@ -67,8 +67,7 @@ def test_geo_temporal_query(polygons_mask, points_mask):
             "min_lon": -120.5,
             "max_lat": 40.25,
             "max_lon": -119.5,
-        },
-        area_limit=None,
+        }
     )
     rectangle_nc = client.geo_temporal_query(
         ipns_key_str="era5_wind_100m_u-hourly",
@@ -188,24 +187,13 @@ def test_selection_size_conflicts(oversized_polygons_mask):
     """
     Test that `geo_temporal_query` fails as predicted when selections of inappropriate size are requested.
     """
-    with pytest.raises(SelectionTooLargeError) as too_large_area_exc_info:
-        client.geo_temporal_query(
-            ipns_key_str="era5_wind_100m_u-hourly",
-            polygon_kwargs={
-                "polygons_mask": oversized_polygons_mask,
-                "epsg_crs": "epsg:4326",
-            },
-            area_limit=100,
-        )
     with pytest.raises(SelectionTooLargeError) as too_many_points_exc_info:
         client.geo_temporal_query(
             ipns_key_str="era5_wind_100m_u-hourly",
             circle_kwargs={"center_lat": 40, "center_lon": -120, "radius": 5000},
-            area_limit=50000,
             point_limit=100,
         )
 
-    assert too_large_area_exc_info.match("square coordinates is more than limit of")
     assert too_many_points_exc_info.match("data points is more than limit of 100")
 
 

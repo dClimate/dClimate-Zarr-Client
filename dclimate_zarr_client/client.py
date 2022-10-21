@@ -14,7 +14,6 @@ from .dclimate_zarr_errors import (
     InvalidExportFormatError,
 )
 from .geo_utils import (
-    check_request_area,
     check_dataset_size,
     check_has_data,
     get_data_in_time_range,
@@ -27,7 +26,6 @@ from .geo_utils import (
     spatial_aggregation,
     temporal_aggregation,
     DEFAULT_POINT_LIMIT,
-    DEFAULT_AREA_LIMIT,
 )
 from .ipfs_retrieval import get_dataset_by_ipns_hash, get_ipns_name_hash
 
@@ -78,7 +76,6 @@ def geo_temporal_query(
     rolling_agg_kwargs: dict = None,
     time_range: typing.Optional[typing.List[datetime.datetime]] = None,
     as_of: typing.Optional[datetime.datetime] = None,
-    area_limit: int = DEFAULT_AREA_LIMIT,
     point_limit: int = DEFAULT_POINT_LIMIT,
     output_format: str = "array",
 ) -> typing.Union[dict, bytes]:
@@ -153,8 +150,6 @@ def geo_temporal_query(
             "User requested an invalid export format. Only 'array' or 'netcdf' permitted."
         )
     # Set defaults to avoid Nones accidentally passed by users causing a TypeError
-    if not area_limit:
-        area_limit = DEFAULT_AREA_LIMIT
     if not point_limit:
         point_limit = DEFAULT_POINT_LIMIT
     # Use the provided dataset string to find the dataset via IPNS\
@@ -172,11 +167,10 @@ def geo_temporal_query(
     elif rectangle_kwargs:
         ds = get_points_in_rectangle(ds, **rectangle_kwargs)
     elif polygon_kwargs:
-        ds = get_points_in_polygons(ds, **polygon_kwargs, area_limit=area_limit)
+        ds = get_points_in_polygons(ds, **polygon_kwargs, point_limit=point_limit)
     elif multiple_points_kwargs:
         ds = get_multiple_points(ds, **multiple_points_kwargs)
     # Check that size of reduced data won't prove too expensive to request and process, according to specified limits
-    check_request_area(ds, area_limit, spatial_agg_kwargs)
     check_dataset_size(ds, point_limit)
     check_has_data(ds)
     if multiple_points_kwargs:
