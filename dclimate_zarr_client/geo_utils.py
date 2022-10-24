@@ -199,13 +199,16 @@ def get_points_in_rectangle(
     Returns:
         xr.Dataset: subsetted dataset
     """
-    rectangle_ds = ds.where(
-        (ds.latitude >= min_lat)
-        & (ds.latitude <= max_lat)
-        & (ds.longitude >= min_lon)
-        & (ds.longitude <= max_lon),
-        drop=True,
-    )
+    try:
+        rectangle_ds = ds.where(
+            (ds.latitude >= min_lat)
+            & (ds.latitude <= max_lat)
+            & (ds.longitude >= min_lon)
+            & (ds.longitude <= max_lon),
+            drop=True,
+        )
+    except ValueError:
+        raise NoDataFoundError("Selection is empty or all NA")
     return rectangle_ds
 
 
