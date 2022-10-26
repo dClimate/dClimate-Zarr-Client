@@ -179,7 +179,10 @@ def get_points_in_circle(
         xr.Dataset: subsetted dataset
     """
     distances = _haversine(center_lat, center_lon, ds["latitude"], ds["longitude"])
-    circle_ds = ds.where(distances < radius, drop=True)
+    try:
+        circle_ds = ds.where(distances < radius, drop=True)
+    except ValueError:
+        raise NoDataFoundError("Selection is empty or all NA")
     return circle_ds
 
 
