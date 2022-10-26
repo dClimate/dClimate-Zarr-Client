@@ -51,8 +51,11 @@ def check_has_data(ds: xr.Dataset):
     Raises:
         NoDataFoundError: Raised when data is all NA
     """
-    var_name = list(ds.data_vars)[0]
-    if ds[var_name].isnull().all():
+    try:
+        var_name = list(ds.data_vars)[0]
+        if ds[var_name].isnull().all():
+            raise NoDataFoundError("Selection is empty or all NA")
+    except ValueError:
         raise NoDataFoundError("Selection is empty or all NA")
 
 
