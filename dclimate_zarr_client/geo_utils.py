@@ -255,7 +255,10 @@ def get_data_in_time_range(
     Returns:
         xr.Dataset: subsetted dataset
     """
-    return ds.sel(time=slice(str(start_time), str(end_time)))
+    try:
+        return ds.sel(time=slice(str(start_time), str(end_time)))
+    except ValueError:
+        raise NoDataFoundError("No data found in time range.")
 
 
 def reduce_polygon_to_point(
