@@ -56,7 +56,7 @@ def _resolve_ipns_name_hash(ipns_name_hash: str) -> str:
     return r.json()["Path"].split("/")[-1]
 
 
-def get_ipns_name_hash(ipns_key_str) -> str:
+def get_ipns_name_hash(ipns_key_str: str) -> str:
     """Find the latest IPNS name hash corresponding to a string (key)
 
     Args:
@@ -70,14 +70,10 @@ def get_ipns_name_hash(ipns_key_str) -> str:
     """
     r = requests.post(f"{DEFAULT_HOST}/key/list", params={"decoder": "json"})
     r.raise_for_status()
-    ipns_rec_dict, ipns_records = {}, []
-    for name_hash_pair in r.json()["Keys"]:
-        ipns_records.append(tuple([vals for vals in name_hash_pair.values()]))
-    ipns_rec_dict.update(ipns_records)
-    try:
-        return ipns_rec_dict[ipns_key_str]
-    except KeyError:
-        raise DatasetNotFoundError("Invalid dataset name")
+    for entry in r.json()["Keys"]:
+        if entry["Name"] == ipns_key_str:
+            return entry["Id"]
+    raise DatasetNotFoundError("Invalid dataset name")
 
 
 def _get_relevant_metadata(ipfs_head_hash: str, as_of: datetime.datetime) -> dict:
