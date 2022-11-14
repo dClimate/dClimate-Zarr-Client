@@ -33,7 +33,7 @@ def test_representative_point(input_ds, polygons_mask):
     Test the representative point (approximate centroid guaranteed to be within a polygon) geographic extraction method
     """
     rep_pt_ds = geo_utils.reduce_polygon_to_point(input_ds, polygons_mask=polygons_mask)
-    assert rep_pt_ds["u100"].values[0] == 0.9564208984375
+    assert rep_pt_ds["u100"].values[0] == pytest.approx(0.9564208984375)
 
 
 def test_rolling_aggregation(input_ds):
@@ -43,9 +43,9 @@ def test_rolling_aggregation(input_ds):
     mean_vals = geo_utils.rolling_aggregation(input_ds, 5, "mean")
     max_vals = geo_utils.rolling_aggregation(input_ds, 5, "max")
     std_vals = geo_utils.rolling_aggregation(input_ds, 5, "std")
-    assert mean_vals["u100"].values[0][0][0] == 7.912628173828125
-    assert max_vals["u100"].values[0][0][0] == 8.5950927734375
-    assert std_vals["u100"].values[0][0][0] == 0.5272848606109619
+    assert mean_vals["u100"].values[0][0][0] == pytest.approx(7.912628173828125)
+    assert max_vals["u100"].values[0][0][0] == pytest.approx(8.5950927734375)
+    assert std_vals["u100"].values[0][0][0] == pytest.approx(0.5272848606109619)
 
 
 def test_temporal_aggregation(input_ds):
@@ -62,9 +62,9 @@ def test_temporal_aggregation(input_ds):
     yearly_std = geo_utils.temporal_aggregation(
         input_ds, time_period="year", agg_method="std"
     )
-    assert daily_maxs["u100"].values[0][0][0] == 8.5950927734375
-    assert monthly_means["u100"].values[0][0][0] == -0.19848433136940002
-    assert yearly_std["u100"].values[0][0][0] == 6.490322113037109
+    assert daily_maxs["u100"].values[0][0][0] == pytest.approx(8.5950927734375)
+    assert monthly_means["u100"].values[0][0][0] == pytest.approx(-0.19848433136940002)
+    assert yearly_std["u100"].values[0][0][0] == pytest.approx(6.490322113037109)
 
 
 def test_spatial_aggregation(input_ds):
@@ -73,5 +73,5 @@ def test_spatial_aggregation(input_ds):
     """
     mean_vals_all_pts = geo_utils.spatial_aggregation(input_ds, "mean")
     min_val_rep_pt = geo_utils.spatial_aggregation(input_ds, "min")
-    assert float(mean_vals_all_pts["u100"].values[0]) == 1.5880329608917236
-    assert float(min_val_rep_pt["u100"].values[0]) == -9.5386962890625
+    assert float(mean_vals_all_pts["u100"].values[0]) == pytest.approx(1.5880329608917236)
+    assert float(min_val_rep_pt["u100"].values[0]) == pytest.approx(-9.5386962890625)

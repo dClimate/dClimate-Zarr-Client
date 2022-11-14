@@ -115,11 +115,11 @@ def test_geo_temporal_query(polygons_mask, points_mask):
         )
         assert nc_vals == points_arr["data"][i]
 
-    assert point["data"][0] == -2.013934326171875
-    assert rectangle["data"][0][0][0] == -1.9547119140625
+    assert point["data"][0] == pytest.approx(-2.013934326171875)
+    assert rectangle["data"][0][0][0] == pytest.approx(-1.9547119140625)
     assert rectangle_nc[0] == 67
-    assert circle["data"][0] == 0.44366344809532166
-    assert polygon["data"][0] == -1.1927716255187988
+    assert circle["data"][0] == pytest.approx(0.44366344809532166)
+    assert polygon["data"][0] == pytest.approx(-1.1927716255187988)
 
 
 def test_geo_conflicts():
