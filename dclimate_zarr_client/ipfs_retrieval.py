@@ -158,6 +158,19 @@ def get_metadata_by_key(key: str) -> dict:
     ipfs_hash = _resolve_ipns_name_hash(ipns_name)
     return _get_single_metadata(ipfs_hash)
 
+def get_heads() -> typing.Dict[str, str]:
+    """Get datasets available on IPFS node and their most recent CID
+    
+    Returns:
+        typing.Dict[str, str]: Dictionary of dataset keys and CID values
+    """
+    r = requests.post(f"{DEFAULT_HOST}/key/list", params={"decoder": "json"})
+    r.raise_for_status()
+    return {
+        name_dict["Name"]: name_dict["Id"]
+        for name_dict in r.json()["Keys"]
+        if any([span in name_dict["Name"] for span in VALID_TIME_SPANS])
+        }
 
 def list_datasets() -> typing.List[str]:
     """List datasets available on IPFS node
@@ -165,10 +178,4 @@ def list_datasets() -> typing.List[str]:
     Returns:
         typing.List[str]: List of available datasets' keys
     """
-    r = requests.post(f"{DEFAULT_HOST}/key/list", params={"decoder": "json"})
-    r.raise_for_status()
-    return [
-        name_dict["Name"]
-        for name_dict in r.json()["Keys"]
-        if any([span in name_dict["Name"] for span in VALID_TIME_SPANS])
-    ]
+    return list(get_heads().keys())
