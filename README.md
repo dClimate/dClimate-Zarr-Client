@@ -1,8 +1,15 @@
 # dClimate-Zarr-Client
 Retrieve zarrs stored on IPLD. Currently, primary use is to handle ipfs / geographic operations
 for use in a [Flask API](https://github.com/dClimate/dClimate-Zarr-API).
+
 Uses [ipldstore](https://github.com/dClimate/ipldstore) to actually access zarrs, then provides
-filtering and aggregation functionality to these zarrs using `xarray`.
+filtering and aggregation functionality to these zarrs using `xarray` native methods wherever possible.
+Filtering and aggregation are packaged into a minimal number of convenience functions optimized for flexbility
+and performance.
+
+A limit is imposed on the total number of points users can request to prevent overwhelming the API. This limit
+can be manually overridden in exceptional cases.
+
 The main entrypoint to the repo's code is `dclimate_zarr_client.client.geo_temporal_query`
 
 
