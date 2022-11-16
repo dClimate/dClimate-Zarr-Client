@@ -1,7 +1,46 @@
 # dClimate-Zarr-Client
-Retrieve zarrs stored on IPLD
+Retrieve zarrs stored on IPLD. Currently, primary use is to handle ipfs / geographic operations
+for use in a [Flask API](https://github.com/dClimate/dClimate-Zarr-API).
+Uses [ipldstore](https://github.com/dClimate/ipldstore) to actually access zarrs, then provides
+filtering and aggregation functionality to these zarrs using `xarray`.
+The main entrypoint to the repo's code is `dclimate_zarr_client.client.geo_temporal_query`
 
-### Example usage:
+
+## File breakdown:
+
+### client.py
+
+Entrypoint to code, contains `geo_temporal_query`, which combines all possible subsetting
+and aggregation logic in a single function. Can output the data as either a `dict`
+or `bytes` representing an `xarray` dataset.
+
+---
+
+### dclimate_zarr_errors.py
+
+Various exceptions to be raised for bad or invalid user input.
+
+---
+
+### geo_utils.py
+
+Functions to manipulate `xarray` datasets. Contains polygon, rectangle, circle and point spatial
+subsetting options, as well as temporal subsetting. Also allows for both spatial and temporal
+aggregations.
+
+---
+
+### ipfs_retrieval.py
+
+Functions for accessing zarrs over IPFS/IPNS. Functionality includes resolving IPNS keys to IPFS hashes
+based on key names, as well as using `ipldstore` to open the zarrs that those IPFS hashes point to.
+
+
+##  Usage:
+
+While in virtual environment and at root of repo, run `pip install -e .` to install the package's core functionality.
+To install with extra packages for development and testing, run `pip install -e .\[testing,dev]`. Then you can run python
+code like:
 
 ```python
 from datetime import datetime
@@ -16,14 +55,15 @@ ds_bytes = geo_temporal_query(
 )
 ds = xr.open_dataset(ds_bytes)
 ```
-### Run tests:
+## Run tests:
 ```shell
 cd test
 pytest
 ```
 
-### Environment requirements:
+## Environment requirements:
 
 - Running IPFS daemon
 - Dataset parsed with `climate_ipfs` branch `zarr-main` with name `ds_name`
-- Up-to-date IPNS table (IPNS key for `ds_name` can't be expired)
+- Up-to-date IPNS table (IPNS key for `ds_name` can't be expired).
+  If `ipfs name resolve <ipns key>` stalls out, the IPNS key is expired and ETL must be rerun.
