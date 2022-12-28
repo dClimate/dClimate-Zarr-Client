@@ -28,12 +28,13 @@ def test_get_points_in_circle(input_ds):
     assert float(ds.longitude.max()) == -119.5
 
 
-def test_representative_point(input_ds, polygons_mask):
+def test_get_point_for_small_polygon(input_ds, undersized_polygons_mask):
     """
-    Test the representative point (approximate centroid guaranteed to be within a polygon) geographic extraction method
+    Test that providing get_points_in_polygons a polygon_mask smaller than any grid cell returns a single
+    point dataset for the point closest to that polygon's centroid
     """
-    rep_pt_ds = geo_utils.reduce_polygon_to_point(input_ds, polygons_mask=polygons_mask)
-    assert rep_pt_ds["u100"].values[0] == pytest.approx(0.9564208984375)
+    ds = geo_utils.get_points_in_polygons(input_ds, polygons_mask = undersized_polygons_mask)
+    assert ds["u100"].values[0] == pytest.approx(-2.3199463)
 
 
 def test_rolling_aggregation(input_ds):

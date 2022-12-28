@@ -20,6 +20,14 @@ def oversized_polygons_mask():
 
 
 @pytest.fixture
+def undersized_polygons_mask():
+    shp = gpd.read_file(
+        pathlib.Path(__file__).parent / "etc" / "central_ca_farm.geojson"
+    )
+    return shp.geometry.values
+
+
+@pytest.fixture
 def polygons_mask():
     shp = gpd.read_file(
         pathlib.Path(__file__).parent / "etc" / "central_northern_ca_counties.geojson"

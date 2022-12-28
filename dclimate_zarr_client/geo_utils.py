@@ -235,17 +235,24 @@ def get_points_in_polygons(
     Returns:
         xr.Dataset: subsetted dataset
     """
-    ds.rio.set_spatial_dims(x_dim="longitude", y_dim="latitude", inplace=True)
-    ds.rio.write_crs("epsg:4326", inplace=True)
-    mask = gpd.geoseries.GeoSeries(polygons_mask).set_crs(epsg_crs).to_crs(4326)
-    min_lon, min_lat, max_lon, max_lat = mask.total_bounds
-    box_ds = get_points_in_rectangle(ds, min_lat, min_lon, max_lat, max_lon)
-    check_dataset_size(box_ds, point_limit=point_limit)
-    shaped_ds = box_ds.rio.clip(mask, 4326, drop=True)
-    data_var = list(shaped_ds.data_vars)[0]
-    if "grid_mapping" in shaped_ds[data_var].attrs:
-        del shaped_ds[data_var].attrs["grid_mapping"]
-    return shaped_ds
+    # If the polygon(s) are collectively smaller than the size of one grid cell, clipping will return no data
+    # In this case return data from the grid cell nearest to the center of the polygon
+    if ds.attrs["spatial resolution"]**2 > polygons_mask.unary_union().area:
+        rep_point_ds = reduce_polygon_to_point(ds, polygons_mask)
+        return rep_point_ds
+    # return clipped data as normal if the polygons are large enough
+    else:
+        ds.rio.set_spatial_dims(x_dim="longitude", y_dim="latitude", inplace=True)
+        ds.rio.write_crs("epsg:4326", inplace=True)
+        mask = gpd.geoseries.GeoSeries(polygons_mask).set_crs(epsg_crs).to_crs(4326)
+        min_lon, min_lat, max_lon, max_lat = mask.total_bounds
+        box_ds = get_points_in_rectangle(ds, min_lat, min_lon, max_lat, max_lon)
+        check_dataset_size(box_ds, point_limit=point_limit)
+        shaped_ds = box_ds.rio.clip(mask, 4326, drop=True)
+        data_var = list(shaped_ds.data_vars)[0]
+        if "grid_mapping" in shaped_ds[data_var].attrs:
+            del shaped_ds[data_var].attrs["grid_mapping"]
+        return shaped_ds
 
 
 def get_data_in_time_range(
@@ -270,8 +277,8 @@ def get_data_in_time_range(
 def reduce_polygon_to_point(
     ds: xr.Dataset, polygons_mask: gpd.array.GeometryArray
 ) -> xr.Dataset:
-    """Subsets data to a representative point approximately at the center of an arbitrary shape.
-        This point will always be within the shape, even if the exact center is not.
+    """Subsets data to a representative point approximately at the center of an arbitrary shape. 
+        Returns data from the nearest grid cell to this pont.
         NOTE a more involved alternative would be to return the average for values in the entire polygon at this point
 
     Args:
