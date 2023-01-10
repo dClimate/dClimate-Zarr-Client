@@ -171,7 +171,7 @@ def get_heads() -> typing.Dict[str, str]:
         name_dict["Name"]: name_dict["Id"]
         for name_dict in r.json()["Keys"]
         if any([span in name_dict["Name"] for span in VALID_TIME_SPANS])
-        }
+    }
 
 
 def list_datasets() -> typing.List[str]:
