@@ -90,7 +90,9 @@ def _check_input_parameters(time_period=None, agg_method=None):
         )
 
 
-def get_single_point(ds: xr.Dataset, lat: float, lon: float, snap_to_grid: bool = True) -> xr.Dataset:
+def get_single_point(
+    ds: xr.Dataset, lat: float, lon: float, snap_to_grid: bool = True
+) -> xr.Dataset:
     """Gets a dataset corresponding to the full time series for a single point in a dataset
 
     Args:
@@ -108,11 +110,16 @@ def get_single_point(ds: xr.Dataset, lat: float, lon: float, snap_to_grid: bool 
     try:
         return ds.sel(latitude=lat, longitude=lon, method="nearest", tolerance=10e-5)
     except KeyError:
-        raise NoDataFoundError("User requested not to snap_to_grid, but exact coord not in dataset")
+        raise NoDataFoundError(
+            "User requested not to snap_to_grid, but exact coord not in dataset"
+        )
 
 
 def get_multiple_points(
-    ds: xr.Dataset, points_mask: gpd.array.GeometryArray, epsg_crs: int, snap_to_grid: bool = True
+    ds: xr.Dataset,
+    points_mask: gpd.array.GeometryArray,
+    epsg_crs: int,
+    snap_to_grid: bool = True,
 ) -> dict:
     mask = list(gpd.geoseries.GeoSeries(points_mask).set_crs(epsg_crs).to_crs(4326))
     lats, lons = [point.y for point in mask], [point.x for point in mask]
@@ -123,7 +130,8 @@ def get_multiple_points(
         return ds.sel(latitude=lats, longitude=lons, method="nearest", tolerance=10e-5)
     except KeyError:
         raise NoDataFoundError(
-            "User requested not to snap_to_grid, but at least one coord not in dataset")
+            "User requested not to snap_to_grid, but at least one coord not in dataset"
+        )
 
 
 def _haversine(
@@ -237,7 +245,7 @@ def get_points_in_polygons(
     """
     # If the polygon(s) are collectively smaller than the size of one grid cell, clipping will return no data
     # In this case return data from the grid cell nearest to the center of the polygon
-    if ds.attrs["spatial resolution"]**2 > polygons_mask.unary_union().area:
+    if ds.attrs["spatial resolution"] ** 2 > polygons_mask.unary_union().area:
         rep_point_ds = reduce_polygon_to_point(ds, polygons_mask)
         return rep_point_ds
     # return clipped data as normal if the polygons are large enough
@@ -277,7 +285,7 @@ def get_data_in_time_range(
 def reduce_polygon_to_point(
     ds: xr.Dataset, polygons_mask: gpd.array.GeometryArray
 ) -> xr.Dataset:
-    """Subsets data to a representative point approximately at the center of an arbitrary shape. 
+    """Subsets data to a representative point approximately at the center of an arbitrary shape.
         Returns data from the nearest grid cell to this pont.
         NOTE a more involved alternative would be to return the average for values in the entire polygon at this point
 

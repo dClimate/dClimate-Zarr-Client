@@ -33,7 +33,9 @@ def test_get_point_for_small_polygon(input_ds, undersized_polygons_mask):
     Test that providing get_points_in_polygons a polygon_mask smaller than any grid cell returns a single
     point dataset for the point closest to that polygon's centroid
     """
-    ds = geo_utils.get_points_in_polygons(input_ds, polygons_mask = undersized_polygons_mask)
+    ds = geo_utils.get_points_in_polygons(
+        input_ds, polygons_mask=undersized_polygons_mask
+    )
     assert ds["u100"].values[0] == pytest.approx(-2.3199463)
 
 
@@ -74,5 +76,7 @@ def test_spatial_aggregation(input_ds):
     """
     mean_vals_all_pts = geo_utils.spatial_aggregation(input_ds, "mean")
     min_val_rep_pt = geo_utils.spatial_aggregation(input_ds, "min")
-    assert float(mean_vals_all_pts["u100"].values[0]) == pytest.approx(1.5880329608917236)
+    assert float(mean_vals_all_pts["u100"].values[0]) == pytest.approx(
+        1.5880329608917236
+    )
     assert float(min_val_rep_pt["u100"].values[0]) == pytest.approx(-9.5386962890625)
