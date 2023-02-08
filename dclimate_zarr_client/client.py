@@ -28,6 +28,7 @@ from .geo_utils import (
     DEFAULT_POINT_LIMIT,
 )
 from .ipfs_retrieval import get_dataset_by_ipns_hash, get_ipns_name_hash
+from .s3_retrieval import get_dataset_from_s3
 
 
 def _prepare_dict(ds: xr.Dataset) -> dict:
@@ -65,7 +66,8 @@ def _prepare_dict(ds: xr.Dataset) -> dict:
 
 
 def geo_temporal_query(
-    ipns_key_str: str,
+    dataset_name: str,
+    source: str = "ipfs",
     point_kwargs: dict = None,
     circle_kwargs: dict = None,
     rectangle_kwargs: dict = None,
@@ -92,7 +94,7 @@ def geo_temporal_query(
             although they can be chained with spatial aggregations if desired.
 
     Args:
-        ipns_key_str (str): name used to link dataset to an ipns_name hash
+        dataset_name (str): name used to link dataset to an ipns_name hash
         circle_kwargs (dict, optional): a dictionary of parameters relevant to a circular query
         rectangle_kwargs (dict, optional): a dictionary of parameters relevant to a rectangular query
         polygon_kwargs (dict, optional): a dictionary of parameters relevant to a polygonal query
@@ -153,8 +155,13 @@ def geo_temporal_query(
     if not point_limit:
         point_limit = DEFAULT_POINT_LIMIT
     # Use the provided dataset string to find the dataset via IPNS\
-    ipns_name_hash = get_ipns_name_hash(ipns_key_str)
-    ds = get_dataset_by_ipns_hash(ipns_name_hash, as_of=as_of)
+    if source == "ipfs":
+        ipns_name_hash = get_ipns_name_hash(dataset_name)
+        ds = get_dataset_by_ipns_hash(ipns_name_hash, as_of=as_of)
+    elif source == "s3":
+        ds = get_dataset_from_s3(dataset_name)
+    else:
+        raise ValueError("only possible sources are s3 and IPFS")
     # Filter data down temporally, then spatially, and check that the size of resulting dataset fits within the limit.
     # While a user can get the entire DS by providing no filters, \
     # this will almost certainly cause the size checks to fail

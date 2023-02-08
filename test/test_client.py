@@ -55,13 +55,13 @@ def test_geo_temporal_query(polygons_mask, points_mask):
     Exports can be of numpy array (default) or NetCDF format
     """
     point = client.geo_temporal_query(
-        ipns_key_str="era5_wind_100m_u-hourly",
+        dataset_name="era5_wind_100m_u-hourly",
         point_kwargs={"lat": 39.75, "lon": -118.5},
         rolling_agg_kwargs={"window_size": 5, "agg_method": "mean"},
         point_limit=None,
     )
     rectangle = client.geo_temporal_query(
-        ipns_key_str="era5_wind_100m_u-hourly",
+        dataset_name="era5_wind_100m_u-hourly",
         rectangle_kwargs={
             "min_lat": 39.75,
             "min_lon": -120.5,
@@ -70,7 +70,7 @@ def test_geo_temporal_query(polygons_mask, points_mask):
         }
     )
     rectangle_nc = client.geo_temporal_query(
-        ipns_key_str="era5_wind_100m_u-hourly",
+        dataset_name="era5_wind_100m_u-hourly",
         rectangle_kwargs={
             "min_lat": 39.75,
             "min_lon": -120.5,
@@ -81,24 +81,24 @@ def test_geo_temporal_query(polygons_mask, points_mask):
         output_format="netcdf",
     )
     circle = client.geo_temporal_query(
-        ipns_key_str="era5_wind_100m_u-hourly",
+        dataset_name="era5_wind_100m_u-hourly",
         circle_kwargs={"center_lat": 40, "center_lon": -120, "radius": 150},
         spatial_agg_kwargs={"agg_method": "std"},
         temporal_agg_kwargs={"time_period": "day", "agg_method": "std", "time_unit": 1},
     )
     polygon = client.geo_temporal_query(
-        ipns_key_str="era5_wind_100m_u-hourly",
+        dataset_name="era5_wind_100m_u-hourly",
         polygon_kwargs={"polygons_mask": polygons_mask, "epsg_crs": "epsg:4326"},
         spatial_agg_kwargs={"agg_method": "mean"},
         rolling_agg_kwargs={"window_size": 5, "agg_method": "mean"},
     )
 
     points_arr = client.geo_temporal_query(
-        ipns_key_str="era5_wind_100m_u-hourly",
+        dataset_name="era5_wind_100m_u-hourly",
         multiple_points_kwargs={"points_mask": points_mask, "epsg_crs": "epsg:4326"},
     )
     points_nc = client.geo_temporal_query(
-        ipns_key_str="era5_wind_100m_u-hourly",
+        dataset_name="era5_wind_100m_u-hourly",
         multiple_points_kwargs={"points_mask": points_mask, "epsg_crs": "epsg:4326"},
         output_format="netcdf",
     )
@@ -128,7 +128,7 @@ def test_geo_conflicts():
     """
     with pytest.raises(ConflictingGeoRequestError) as multi_exc_info:
         client.geo_temporal_query(
-            ipns_key_str="era5_wind_100m_u-hourly",
+            dataset_name="era5_wind_100m_u-hourly",
             rectangle_kwargs={
                 "min_lat": 39.75,
                 "min_lon": -120.5,
@@ -139,7 +139,7 @@ def test_geo_conflicts():
         )
     with pytest.raises(ConflictingGeoRequestError) as single_exc_info:
         client.geo_temporal_query(
-            ipns_key_str="era5_wind_100m_u-hourly",
+            dataset_name="era5_wind_100m_u-hourly",
             point_kwargs={"lat": 39.75, "lon": -118.5},
             spatial_agg_kwargs={"agg_method": "std"},
         )
@@ -155,7 +155,7 @@ def test_temp_agg_conflicts():
     """
     with pytest.raises(ConflictingAggregationRequestError):
         client.geo_temporal_query(
-            ipns_key_str="era5_wind_100m_u-hourly",
+            dataset_name="era5_wind_100m_u-hourly",
             rectangle_kwargs={
                 "min_lat": 39.75,
                 "min_lon": -120.5,
@@ -177,7 +177,7 @@ def test_invalid_export():
     """
     with pytest.raises(InvalidExportFormatError):
         client.geo_temporal_query(
-            ipns_key_str="era5_wind_100m_u-hourly",
+            dataset_name="era5_wind_100m_u-hourly",
             point_kwargs={"lat": 39.75, "lon": -118.5},
             output_format="GRIB",
         )
@@ -189,7 +189,7 @@ def test_selection_size_conflicts(oversized_polygons_mask):
     """
     with pytest.raises(SelectionTooLargeError) as too_many_points_exc_info:
         client.geo_temporal_query(
-            ipns_key_str="era5_wind_100m_u-hourly",
+            dataset_name="era5_wind_100m_u-hourly",
             circle_kwargs={"center_lat": 40, "center_lon": -120, "radius": 5000},
             point_limit=100,
         )
@@ -200,7 +200,7 @@ def test_selection_size_conflicts(oversized_polygons_mask):
 def test_no_data_in_selection_error():
     with pytest.raises(NoDataFoundError):
         client.geo_temporal_query(
-            ipns_key_str="era5_wind_100m_u-hourly",
+            dataset_name="era5_wind_100m_u-hourly",
             time_range=[datetime.datetime(1900, 1, 1), datetime.datetime(1910, 1, 1)],
             point_kwargs={"lat": 39.75, "lon": -118.5},
         )
@@ -209,6 +209,6 @@ def test_no_data_in_selection_error():
 def test_multiple_points_not_on_grid(points_mask):
     with pytest.raises(NoDataFoundError):
         client.geo_temporal_query(
-            ipns_key_str="era5_wind_100m_u-hourly",
+            dataset_name="era5_wind_100m_u-hourly",
             multiple_points_kwargs={"points_mask": points_mask, "epsg_crs": "epsg:4326", "snap_to_grid": False}
         )
