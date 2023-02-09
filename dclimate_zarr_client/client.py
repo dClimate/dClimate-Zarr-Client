@@ -193,8 +193,8 @@ def geo_temporal_query(
         ds = rolling_aggregation(ds, **rolling_agg_kwargs)
     # Export
     if output_format == "netcdf":
-        # remove nested attributes, which to_netcdf to bytes doesn't support
-        for bad_key in ["bbox", "date range", "tags"]:
+        # remove nested and None attributes, which to_netcdf to bytes doesn't support
+        for bad_key in ["bbox", "date range", "tags", "finalization date"]:
             if bad_key in ds.attrs:
                 del ds.attrs[bad_key]
         return ds.to_netcdf()
