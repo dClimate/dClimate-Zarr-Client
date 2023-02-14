@@ -1,5 +1,6 @@
 import os
 from s3fs import S3FileSystem, S3Map
+import typing
 import json
 import xarray as xr
 
@@ -29,6 +30,19 @@ def get_dataset_from_s3(dataset_name: str) -> xr.Dataset:
     """
     s3_map = S3Map(f"{BUCKET}/{dataset_name}.zarr", s3=get_s3_fs())
     return xr.open_zarr(s3_map)
+
+
+def list_s3_datasets() -> typing.List[str]:
+    """List all datasets available over s3
+
+    Returns:
+        list[str]: available datasets
+    """
+    s3 = get_s3_fs()
+    root_keys = s3.ls(BUCKET)
+    file_names = [key.split("/")[-1] for key in root_keys]
+    zarr_names = [name[:-5] for name in file_names if name.endswith(".zarr")]
+    return zarr_names
 
 
 def get_metadata_by_s3_key(key: str) -> dict:

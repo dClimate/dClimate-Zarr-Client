@@ -67,7 +67,7 @@ def test_geo_temporal_query(polygons_mask, points_mask):
             "min_lon": -120.5,
             "max_lat": 40.25,
             "max_lon": -119.5,
-        }
+        },
     )
     rectangle_nc = client.geo_temporal_query(
         dataset_name="era5_wind_100m_u-hourly",
@@ -210,5 +210,9 @@ def test_multiple_points_not_on_grid(points_mask):
     with pytest.raises(NoDataFoundError):
         client.geo_temporal_query(
             dataset_name="era5_wind_100m_u-hourly",
-            multiple_points_kwargs={"points_mask": points_mask, "epsg_crs": "epsg:4326", "snap_to_grid": False}
+            multiple_points_kwargs={
+                "points_mask": points_mask,
+                "epsg_crs": "epsg:4326",
+                "snap_to_grid": False,
+            },
         )

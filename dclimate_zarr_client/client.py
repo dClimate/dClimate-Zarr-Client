@@ -139,8 +139,8 @@ def geo_temporal_query(
         )
     if spatial_agg_kwargs and point_kwargs:
         raise ConflictingGeoRequestError(
-            "User requested spatial aggregation methods on a single point, but these are mutually exclusive parameters. \
-                Only one may be requested at a time."
+            "User requested spatial aggregation methods on a single point, \
+            but these are mutually exclusive parameters. Only one may be requested at a time."
         )
     if temporal_agg_kwargs and rolling_agg_kwargs:
         raise ConflictingAggregationRequestError(
