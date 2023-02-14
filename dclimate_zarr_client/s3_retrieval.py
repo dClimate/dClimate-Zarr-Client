@@ -4,6 +4,8 @@ import typing
 import json
 import xarray as xr
 
+from dclimate_zarr_client.dclimate_zarr_errors import DatasetNotFoundError
+
 BUCKET = "s3://zarr-dev"
 
 
@@ -28,8 +30,11 @@ def get_dataset_from_s3(dataset_name: str) -> xr.Dataset:
     Returns:
         xr.Dataset: dataset correponding to key
     """
-    s3_map = S3Map(f"{BUCKET}/{dataset_name}.zarr", s3=get_s3_fs())
-    return xr.open_zarr(s3_map)
+    try:
+        s3_map = S3Map(f"{BUCKET}/{dataset_name}.zarr", s3=get_s3_fs(), check=True)
+        return xr.open_zarr(s3_map)
+    except ValueError:
+        raise DatasetNotFoundError("Invalid dataset name")
 
 
 def list_s3_datasets() -> typing.List[str]:
@@ -55,5 +60,8 @@ def get_metadata_by_s3_key(key: str) -> dict:
         dict: metadata corresponding to key
     """
     s3 = get_s3_fs()
-    attr_text = s3.cat(f"{BUCKET}/{key}.zarr/.zattrs")
+    try:
+        attr_text = s3.cat(f"{BUCKET}/{key}.zarr/.zattrs")
+    except FileNotFoundError:
+        raise DatasetNotFoundError("Invalid dataset name")
     return json.loads(attr_text)
