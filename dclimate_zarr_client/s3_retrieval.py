@@ -1,7 +1,9 @@
+import datetime
 import os
 from s3fs import S3FileSystem, S3Map
 import typing
 import json
+import pandas as pd
 import xarray as xr
 
 from dclimate_zarr_client.dclimate_zarr_errors import DatasetNotFoundError
@@ -32,9 +34,25 @@ def get_dataset_from_s3(dataset_name: str) -> xr.Dataset:
     """
     try:
         s3_map = S3Map(f"{BUCKET}/{dataset_name}.zarr", s3=get_s3_fs(), check=True)
-        return xr.open_zarr(s3_map)
+        ds = xr.open_zarr(s3_map)
     except ValueError:
         raise DatasetNotFoundError("Invalid dataset name")
+
+    if ds.update_in_progress:
+        if ds.update_is_append_only:
+            start, end = ds.attrs["date range"][0], ds.attrs["update_previous_end_date"]
+        else:
+            start, end = ds.attrs["date range"]
+        if end is None:
+            raise DatasetNotFoundError(
+                "Dataset is undergoing initial parse, retry request later"
+            )
+        date_range = pd.date_range(
+            *[datetime.datetime.strptime(t, "%Y%m%d%H") for t in (start, end)]
+        )
+        ds = ds.sel(time=date_range)
+
+    return ds
 
 
 def list_s3_datasets() -> typing.List[str]:
