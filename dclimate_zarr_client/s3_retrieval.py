@@ -3,7 +3,6 @@ import os
 from s3fs import S3FileSystem, S3Map
 import typing
 import json
-import pandas as pd
 import xarray as xr
 
 from dclimate_zarr_client.dclimate_zarr_errors import DatasetNotFoundError
@@ -47,7 +46,7 @@ def get_dataset_from_s3(dataset_name: str) -> xr.Dataset:
             raise DatasetNotFoundError(
                 "Dataset is undergoing initial parse, retry request later"
             )
-        date_range = pd.date_range(
+        date_range = slice(
             *[datetime.datetime.strptime(t, "%Y%m%d%H") for t in (start, end)]
         )
         ds = ds.sel(time=date_range)
