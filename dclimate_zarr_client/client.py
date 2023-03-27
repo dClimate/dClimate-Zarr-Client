@@ -62,8 +62,11 @@ def _prepare_dict(ds: xr.Dataset) -> dict:
                 dimensions.append(dim)
         ret_dict["data"] = np.where(~np.isfinite(vals), None, vals).tolist()
     ret_dict["dimensions_order"] = dimensions
-    if ds.update_in_progress and not ds.update_is_append_only:
-        ret_dict["update_date_range"] = ds.attrs["update_date_range"]
+    try:
+        if ds.update_in_progress and not ds.update_is_append_only:
+            ret_dict["update_date_range"] = ds.attrs["update_date_range"]
+    except AttributeError:
+        pass
     return ret_dict
 
 
@@ -78,11 +81,14 @@ def _prepare_netcdf_bytes(ds: xr.Dataset) -> bytes:
     Returns:
         bytes: netcdf representation of zarr as bytes
     """
-    if ds.update_in_progress and not ds.update_is_append_only:
-        update_date_range = ds.attrs["update_date_range"]
-        ds.attrs[
-            "updating date range"
-        ] = f"{update_date_range[0]}-{update_date_range[1]}"
+    try:
+        if ds.update_in_progress and not ds.update_is_append_only:
+            update_date_range = ds.attrs["update_date_range"]
+            ds.attrs[
+                "updating date range"
+            ] = f"{update_date_range[0]}-{update_date_range[1]}"
+    except AttributeError:
+        pass
     # remove nested and None attributes, which to_netcdf to bytes doesn't support
     for bad_key in [
         "bbox",

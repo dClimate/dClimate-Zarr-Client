@@ -277,7 +277,7 @@ def get_data_in_time_range(
         xr.Dataset: subsetted dataset
     """
     try:
-        return ds.sel(time=slice(str(start_time), str(end_time)))
+        return ds.sel(time=slice(start_time, end_time))
     except ValueError:
         raise NoDataFoundError("No data found in time range.")
 
