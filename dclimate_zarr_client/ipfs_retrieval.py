@@ -36,7 +36,9 @@ def _get_previous_hash_from_metadata(metadata: dict) -> typing.Optional[str]:
     """
     links = metadata["links"]
     try:
-        link_to_previous = [link for link in links if link["rel"] == "previous"][0]
+        link_to_previous = [
+            link for link in links if link["rel"] in {"prev", "previous"}
+        ][0]
     except IndexError:
         return None
     return link_to_previous["metadata href"]["/"]
