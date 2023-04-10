@@ -1,8 +1,10 @@
 import datetime
 import typing
 
+
 import numpy as np
 import geopandas as gpd
+from rioxarray.exceptions import NoDataInBounds
 import xarray as xr
 from shapely.ops import unary_union
 
@@ -256,7 +258,10 @@ def get_points_in_polygons(
         min_lon, min_lat, max_lon, max_lat = mask.total_bounds
         box_ds = get_points_in_rectangle(ds, min_lat, min_lon, max_lat, max_lon)
         check_dataset_size(box_ds, point_limit=point_limit)
-        shaped_ds = box_ds.rio.clip(mask, 4326, drop=True)
+        try:
+            shaped_ds = box_ds.rio.clip(mask, 4326, drop=True)
+        except NoDataInBounds:
+            return reduce_polygon_to_point(ds, polygons_mask)
         data_var = list(shaped_ds.data_vars)[0]
         if "grid_mapping" in shaped_ds[data_var].attrs:
             del shaped_ds[data_var].attrs["grid_mapping"]
