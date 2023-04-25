@@ -53,7 +53,9 @@ def _resolve_ipns_name_hash(ipns_name_hash: str) -> str:
     Returns:
         str: ipfs hash corresponding to this ipns name hash
     """
-    r = requests.post(f"{DEFAULT_HOST}/name/resolve", params={"arg": ipns_name_hash})
+    r = requests.post(
+        f"{DEFAULT_HOST}/name/resolve", params={"arg": ipns_name_hash, "offline": True}
+    )
     r.raise_for_status()
     return r.json()["Path"].split("/")[-1]
 
