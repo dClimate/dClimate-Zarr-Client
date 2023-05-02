@@ -11,10 +11,10 @@ from .dclimate_zarr_errors import DatasetNotFoundError, NoMetadataFoundError
 DEFAULT_HOST = "http://127.0.0.1:5001/api/v0"
 VALID_TIME_SPANS = ["daily", "hourly", "weekly", "quarterly"]
 
-def _get_host():
+def _get_host(uri="/api/v0"):
     host_from_env = os.getenv("IPFS_HOST")
     if host_from_env:
-        return host_from_env + "/api/v0"
+        return host_from_env + uri
     return DEFAULT_HOST
 
 def _get_single_metadata(ipfs_hash: str) -> dict:
@@ -122,7 +122,7 @@ def get_dataset_by_ipfs_hash(ipfs_hash: str) -> xr.Dataset:
     Returns:
         xr.Dataset: dataset corresponding to hash
     """
-    ipfs_mapper = get_ipfs_mapper(host=_get_host())
+    ipfs_mapper = get_ipfs_mapper(host=_get_host(uri=""))
     ipfs_mapper.set_root(ipfs_hash)
     return xr.open_zarr(ipfs_mapper)
 
