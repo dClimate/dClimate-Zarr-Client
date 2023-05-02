@@ -32,7 +32,7 @@ def get_dataset_from_s3(dataset_name: str) -> xr.Dataset:
         xr.Dataset: dataset correponding to key
     """
     try:
-        s3_map = S3Map(f"{BUCKET}/{dataset_name}.zarr", s3=get_s3_fs(), check=True)
+        s3_map = S3Map(f"{BUCKET}/datasets/{dataset_name}.zarr", s3=get_s3_fs(), check=True)
         ds = xr.open_zarr(s3_map)
     except ValueError:
         raise DatasetNotFoundError("Invalid dataset name")
@@ -61,7 +61,7 @@ def list_s3_datasets() -> typing.List[str]:
         list[str]: available datasets
     """
     s3 = get_s3_fs()
-    root_keys = s3.ls(BUCKET)
+    root_keys = s3.ls(f"{BUCKET}/datasets")
     file_names = [key.split("/")[-1] for key in root_keys]
     zarr_names = [name[:-5] for name in file_names if name.endswith(".zarr")]
     return zarr_names
@@ -78,7 +78,7 @@ def get_metadata_by_s3_key(key: str) -> dict:
     """
     s3 = get_s3_fs()
     try:
-        attr_text = s3.cat(f"{BUCKET}/{key}.zarr/.zattrs")
+        attr_text = s3.cat(f"{BUCKET}/datasets/{key}.zarr/.zattrs")
     except FileNotFoundError:
         raise DatasetNotFoundError("Invalid dataset name")
     return json.loads(attr_text)
