@@ -104,6 +104,7 @@ def _prepare_netcdf_bytes(ds: xr.Dataset) -> bytes:
 
 def geo_temporal_query(
     dataset_name: str,
+    bucket_name: str,
     source: str = "ipfs",
     point_kwargs: dict = None,
     circle_kwargs: dict = None,
@@ -132,6 +133,7 @@ def geo_temporal_query(
 
     Args:
         dataset_name (str): name used to link dataset to an ipns_name hash
+        bucket_name (str): S3 bucket name where the datasets are going to be fetched
         circle_kwargs (dict, optional): a dictionary of parameters relevant to a circular query
         rectangle_kwargs (dict, optional): a dictionary of parameters relevant to a rectangular query
         polygon_kwargs (dict, optional): a dictionary of parameters relevant to a polygonal query
@@ -196,7 +198,7 @@ def geo_temporal_query(
         ipns_name_hash = get_ipns_name_hash(dataset_name)
         ds = get_dataset_by_ipns_hash(ipns_name_hash, as_of=as_of)
     elif source == "s3":
-        ds = get_dataset_from_s3(dataset_name)
+        ds = get_dataset_from_s3(dataset_name, bucket_name)
     else:
         raise ValueError("only possible sources are s3 and IPFS")
     # Filter data down temporally, then spatially, and check that the size of resulting dataset fits within the limit.
