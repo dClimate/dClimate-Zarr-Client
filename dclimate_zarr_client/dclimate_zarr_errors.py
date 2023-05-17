@@ -56,3 +56,11 @@ class InvalidExportFormatError(ZarrClientError):
     """Raised when user specifies an export format other than [array, netcdf]"""
 
     pass
+
+class BucketNotFoundError(ZarrClientError):
+    """Raised when bucket does not exist in AWS S3"""
+    pass
+
+class PathNotFoundError(ZarrClientError):
+    """Raised when bucket does not exist in AWS S3"""
+    pass
