@@ -59,7 +59,7 @@
       "href": "s3://zarr-dev/metadata/datasets/chirps_final_05-monthly.json",
       "type": "application/json",
       "title": "chirps_final_05"
-    },
+    }
   ],
   "providers": [
     {

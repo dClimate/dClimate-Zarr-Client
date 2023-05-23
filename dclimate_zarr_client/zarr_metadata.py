@@ -4,8 +4,6 @@ from dclimate_zarr_client.s3_retrieval import get_s3_fs
 import typing
 import os
 import json
-from ast import literal_eval
-
 
 def get_collections(bucket_name: str) -> typing.List[str]:
     s3 = get_s3_fs()
@@ -30,10 +28,13 @@ def get_collection_datasets(bucket_name: str, collection_name: str):
     _validate_path(collection_file_path)
     collection_file_content = s3.cat_file(collection_file_path)
     try:
-        collection_file_content_as_dict = literal_eval(collection_file_content.decode())
+        collection_file_content_as_dict = json.loads(collection_file_content)
         links = collection_file_content_as_dict.get("links") or []
-        valid_items = filter(lambda link: (link.get("rel") == "item" and link.get("href")), links)
-        return [_extract_file_name_from_path(item.get("href")) for item in valid_items]
+        return [
+            _extract_file_name_from_path(link.get("href"))
+            for link in links
+            if link.get("rel") == "item" and link.get("href")
+        ]
 
     except ValueError as e:
         raise ZarrClientError(f"There is an error reading the file: {collection_file_path}")
@@ -47,6 +48,23 @@ def get_dataset_metadata(bucket_name: str, dataset_name: str):
     dataset_metadata = s3.cat_file(dataset_metadata_file_path)
     return json.loads(dataset_metadata)
 
+
+def get_catalog_metadata(bucket_name: str):
+    s3 = get_s3_fs()
+    _validate_bucket_name(bucket_name)
+    metadata_path = f'{bucket_name}/metadata'
+    _validate_path(metadata_path)
+    metadata_folder_content = s3.ls(metadata_path, detail=False)
+    data_catalog_files = [
+        item for item in metadata_folder_content
+        if item.lower().endswith(".json") and "Data Catalog" in item
+    ]
+    if len(data_catalog_files) > 1:
+        raise ZarrClientError("There is more than one Data Catalog object")
+    if len(data_catalog_files) == 0:
+        raise ZarrClientError("There is not any Data Catalog object")
+    catalog_metadata = s3.cat_file(data_catalog_files[0])
+    return json.loads(catalog_metadata)
 
 def _validate_bucket_name(bucket_name: str):
     try:
