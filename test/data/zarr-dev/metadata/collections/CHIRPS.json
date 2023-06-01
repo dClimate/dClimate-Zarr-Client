@@ -1,0 +1,86 @@
+{
+  "id": "CHIRPS",
+  "type": "Collection",
+  "stac_extensions": [
+    "https://stac-extensions.github.io/projection/v1.0.0/schema.json"
+  ],
+  "stac_version": "1.0.0",
+  "description": "The Climate Hazards Center is an alliance of multidisciplinary scientists and food security analysts utilizing climate and crop models, satellite-based earth observations, and socioeconomic data sets to predict and monitor droughts and food shortages among the world's most vulnerable populations. Through partnerships with USAID, USGS, and FEWS NET, the CHC provides early warning to save lives and secure livelihoods.",
+  "license": "Creative Commons Attribution 3.0",
+  "collection": "CHIRPS",
+  "title": "CHIRPS Version 2.0",
+  "extent": {
+    "spatial": {
+      "bbox": [
+        [
+          -179.975,
+          -49.975,
+          179.975,
+          49.975
+        ]
+      ]
+    },
+    "temporal": {
+      "interval": [
+        [
+          "1981-01-01T00:00:00Z",
+          "2023-03-31T00:00:00Z"
+        ]
+      ]
+    }
+  },
+  "links": [
+    {
+      "rel": "self",
+      "type": "application/json",
+      "title": "CHIRPS",
+      "href": "s3://zarr-dev/metadata/collections/CHIRPS.json"
+    },
+    {
+      "rel": "root",
+      "href": "s3://zarr-dev/metadata/My Organization Data Catalog.json",
+      "type": "application/json",
+      "title": "My Organization root catalog"
+    },
+    {
+      "rel": "parent",
+      "href": "s3://zarr-dev/metadata/My Organization Data Catalog.json",
+      "type": "application/json",
+      "title": "My Organization root catalog"
+    },
+    {
+      "rel": "item",
+      "href": "s3://zarr-dev/metadata/datasets/chirps_final_05-daily.json",
+      "type": "application/json",
+      "title": "chirps_final_05"
+    },
+    {
+      "rel": "item",
+      "href": "s3://zarr-dev/metadata/datasets/chirps_final_05-monthly.json",
+      "type": "application/json",
+      "title": "chirps_final_05"
+    }
+  ],
+  "providers": [
+    {
+      "name": "My Organization",
+      "description": "",
+      "roles": [
+        "processor"
+      ],
+      "url": ""
+    },
+    {
+      "name": "Climate Hazards Group, University of California at Santa Barbara",
+      "description": "The Climate Hazards Center is an alliance of multidisciplinary scientists and food security analysts utilizing climate and crop models, satellite-based earth observations, and socioeconomic data sets to predict and monitor droughts and food shortages among the world's most vulnerable populations. Through partnerships with USAID, USGS, and FEWS NET, the CHC provides early warning to save lives and secure livelihoods.",
+      "roles": [
+        "producer"
+      ],
+      "url": "http://chg.geog.ucsb.edu/",
+      "terms of service": "To the extent possible under the law, Pete Peterson has waived all copyright and related or neighboring rights to CHIRPS. CHIRPS data is in the public domain as registered with Creative Commons."
+    }
+  ],
+  "summaries": {
+    "proj:epsg": "EPSG:4326"
+  }
+}
