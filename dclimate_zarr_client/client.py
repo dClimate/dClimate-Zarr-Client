@@ -104,8 +104,8 @@ def _prepare_netcdf_bytes(ds: xr.Dataset) -> bytes:
 
 def geo_temporal_query(
     dataset_name: str,
-    bucket_name: str,
     source: str = "ipfs",
+    bucket_name: str = None,
     point_kwargs: dict = None,
     circle_kwargs: dict = None,
     rectangle_kwargs: dict = None,

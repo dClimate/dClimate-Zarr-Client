@@ -263,7 +263,7 @@ class TestClient:
 
             client.geo_temporal_query(
                 dataset_name,
-                bucket_name,
+                bucket_name=bucket_name,
                 source="s3"
             )
 
