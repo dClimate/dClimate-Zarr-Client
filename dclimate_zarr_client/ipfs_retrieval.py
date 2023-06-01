@@ -11,11 +11,22 @@ from .dclimate_zarr_errors import DatasetNotFoundError, NoMetadataFoundError
 DEFAULT_HOST = "http://127.0.0.1:5001/api/v0"
 VALID_TIME_SPANS = ["daily", "hourly", "weekly", "quarterly"]
 
-def _get_host(uri="/api/v0"):
+
+def _get_host(uri: str = "/api/v0"):
+    """ Parse the ipfs api host address from `IPFS_HOST` environment variable.
+    If not found, use localhost:5001/api/v0.
+
+    Args:
+        uri (str): the uri where ipfs gateway api listens
+
+    Returns:
+        str: ipfs gateway url
+
+    """
+
     host_from_env = os.getenv("IPFS_HOST")
-    if host_from_env:
-        return host_from_env + uri
-    return DEFAULT_HOST
+    return host_from_env + uri if host_from_env else DEFAULT_HOST
+
 
 def _get_single_metadata(ipfs_hash: str) -> dict:
     """Get metadata for given ipfs hash over ipld
