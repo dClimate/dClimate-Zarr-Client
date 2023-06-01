@@ -1,5 +1,6 @@
 import datetime
 import typing
+import os
 
 import requests
 import xarray as xr
@@ -11,6 +12,22 @@ DEFAULT_HOST = "http://127.0.0.1:5001/api/v0"
 VALID_TIME_SPANS = ["daily", "hourly", "weekly", "quarterly"]
 
 
+def _get_host(uri: str = "/api/v0"):
+    """ Parse the ipfs api host address from `IPFS_HOST` environment variable.
+    If not found, use localhost:5001/api/v0.
+
+    Args:
+        uri (str): the uri where ipfs gateway api listens
+
+    Returns:
+        str: ipfs gateway url
+
+    """
+
+    host_from_env = os.getenv("IPFS_HOST")
+    return host_from_env + uri if host_from_env else DEFAULT_HOST
+
+
 def _get_single_metadata(ipfs_hash: str) -> dict:
     """Get metadata for given ipfs hash over ipld
 
@@ -20,7 +37,8 @@ def _get_single_metadata(ipfs_hash: str) -> dict:
     Returns:
         dict: dict of metadata for hash
     """
-    r = requests.post(f"{DEFAULT_HOST}/dag/get", params={"arg": ipfs_hash})
+
+    r = requests.post(f"{_get_host()}/dag/get", params={"arg": ipfs_hash})
     r.raise_for_status()
     return r.json()
 
@@ -54,7 +72,7 @@ def _resolve_ipns_name_hash(ipns_name_hash: str) -> str:
         str: ipfs hash corresponding to this ipns name hash
     """
     r = requests.post(
-        f"{DEFAULT_HOST}/name/resolve", params={"arg": ipns_name_hash, "offline": True}
+        f"{_get_host()}/name/resolve", params={"arg": ipns_name_hash, "offline": True}
     )
     r.raise_for_status()
     return r.json()["Path"].split("/")[-1]
@@ -72,7 +90,7 @@ def get_ipns_name_hash(ipns_key_str: str) -> str:
     Returns:
         str: ipfsname hash corresponding to the provided string
     """
-    r = requests.post(f"{DEFAULT_HOST}/key/list", params={"decoder": "json"})
+    r = requests.post(f"{_get_host()}/key/list", params={"decoder": "json"})
     r.raise_for_status()
     for entry in r.json()["Keys"]:
         if entry["Name"] == ipns_key_str:
@@ -115,7 +133,7 @@ def get_dataset_by_ipfs_hash(ipfs_hash: str) -> xr.Dataset:
     Returns:
         xr.Dataset: dataset corresponding to hash
     """
-    ipfs_mapper = get_ipfs_mapper()
+    ipfs_mapper = get_ipfs_mapper(host=_get_host(uri=""))
     ipfs_mapper.set_root(ipfs_hash)
     return xr.open_zarr(ipfs_mapper)
 
@@ -169,7 +187,7 @@ def get_heads() -> typing.Dict[str, str]:
     Returns:
         typing.Dict[str, str]: Dictionary of dataset keys and CID values
     """
-    r = requests.post(f"{DEFAULT_HOST}/key/list", params={"decoder": "json"})
+    r = requests.post(f"{_get_host()}/key/list", params={"decoder": "json"})
     r.raise_for_status()
     return {
         name_dict["Name"]: name_dict["Id"]
