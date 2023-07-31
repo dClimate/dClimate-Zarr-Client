@@ -91,7 +91,7 @@ def _check_input_parameters(time_period=None, agg_method=None):
                 'min', 'max', 'median', 'mean', 'std', 'sum'"
         )
 
-def get_forecast_dataset(ds: xr.Dataset, forecast_reference_time: int) -> xr.Dataset:
+def get_forecast_dataset(ds: xr.Dataset, forecast_reference_time: datetime.datetime) -> xr.Dataset:
     """
     Filter a 4D forecast dataset to a 3D dataset ready for analysis
 
@@ -102,6 +102,8 @@ def get_forecast_dataset(ds: xr.Dataset, forecast_reference_time: int) -> xr.Dat
     Returns:
         xr.Dataset: 3D Xarray dataset with forecast hour added to time dimension
     """
+    # select only the requested date
+    ds = ds.sel(forecast_reference_time=forecast_reference_time)
     # Set time to equal the forecast time, not the forecast reference time. Assumes only one forecast reference time is returned
     ds = ds.assign_coords(step=ds.forecast_reference_time.values + ds.step.values)
     # Remove forecast reference hour
