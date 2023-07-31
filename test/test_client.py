@@ -250,6 +250,22 @@ class TestClient:
             fake_dataset = xr.Dataset({"data_var": data})
             return fake_dataset
 
+        @pytest.fixture()
+        def fake_forecast_dataset(self):
+            forecast_reference_time = xr.DataArray(np.arange(1), dims="forecast_reference_time", 
+                                                   coords={"forecast_reference_time": np.arange(1)})
+            step = xr.DataArray(np.arange(3600000000000, 18000000000000, 3600000000000), dims="step",
+                               coords={"step": np.arange(3600000000000, 18000000000000, 3600000000000)})
+            lat = xr.DataArray(np.arange(10, 50, 10), dims="lat",
+                               coords={"lat": np.arange(10, 50, 10)})
+            lon = xr.DataArray(np.arange(100, 140, 10), dims="lon",
+                               coords={"lon": np.arange(100, 140, 10)})
+            data = xr.DataArray(np.random.randn(1, 4, 4, 4), dims=("forecast_reference_time", "step", "lat", "lon"),
+                                coords=(forecast_reference_time, step, lat, lon))
+
+            fake_dataset = xr.Dataset({"data_var": data})
+            return fake_dataset
+
         def test__given_bucket_and_dataset_names__then__fetch_geo_temporal_query_from_S3(
                 self,
                 mocker,
@@ -257,7 +273,7 @@ class TestClient:
         ):
             dataset_name = "copernicus_ocean_salinity_1p5_meters"
             bucket_name = "zarr-prod",
-            forecast_hour = None
+            forecast_reference_time = None
             get_dataset_from_s3_mock = mocker.patch(
                 "dclimate_zarr_client.client.get_dataset_from_s3", return_value=fake_dataset)
             mocker.patch("dclimate_zarr_client.client._prepare_dict", return_value=fake_dataset)
@@ -271,30 +287,30 @@ class TestClient:
             get_dataset_from_s3_mock.assert_called_with(
                 dataset_name,
                 bucket_name,
-                forecast_hour=forecast_hour
+                forecast_reference_time=forecast_reference_time
             )
 
-        def test__given_bucket_and_dataset_names_and_forecast_hour_then__fetch_geo_temporal_query_from_S3(
+        def test__given_bucket_and_dataset_names_and_forecast_reference_time_then__fetch_geo_temporal_query_from_S3(
                 self,
                 mocker,
-                fake_dataset
+                fake_forecast_dataset
         ):
             dataset_name = "gfs_temp_max"
             bucket_name = "zarr-prod",
-            forecast_hour = 62
+            forecast_reference_time = 1
             get_dataset_from_s3_mock = mocker.patch(
-                "dclimate_zarr_client.client.get_dataset_from_s3", return_value=fake_dataset)
-            mocker.patch("dclimate_zarr_client.client._prepare_dict", return_value=fake_dataset)
+                "dclimate_zarr_client.client.get_dataset_from_s3", return_value=fake_forecast_dataset)
+            mocker.patch("dclimate_zarr_client.client._prepare_dict", return_value=fake_forecast_dataset)
 
             client.geo_temporal_query(
                 dataset_name=dataset_name,
                 source="s3",
                 bucket_name=bucket_name,
-                forecast_hour=forecast_hour
+                forecast_reference_time=forecast_reference_time
             )
 
             get_dataset_from_s3_mock.assert_called_with(
                 dataset_name,
                 bucket_name,
-                forecast_hour=forecast_hour
+                forecast_reference_time=forecast_reference_time
             )

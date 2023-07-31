@@ -13,9 +13,10 @@ from .dclimate_zarr_errors import (
     ConflictingAggregationRequestError,
     InvalidExportFormatError,
 )
-from .geo_utils import (
+from .geo_temporal_utils import (
     check_dataset_size,
     check_has_data,
+    get_forecast_dataset,
     get_data_in_time_range,
     get_single_point,
     get_points_in_circle,
@@ -106,7 +107,7 @@ def geo_temporal_query(
     dataset_name: str,
     source: str = "ipfs",
     bucket_name: str = None,
-    forecast_hour: int = None,
+    forecast_reference_time: int = None,
     point_kwargs: dict = None,
     circle_kwargs: dict = None,
     rectangle_kwargs: dict = None,
@@ -199,12 +200,14 @@ def geo_temporal_query(
         ipns_name_hash = get_ipns_name_hash(dataset_name)
         ds = get_dataset_by_ipns_hash(ipns_name_hash, as_of=as_of)
     elif source == "s3":
-        ds = get_dataset_from_s3(dataset_name, bucket_name, forecast_hour=forecast_hour)
+        ds = get_dataset_from_s3(dataset_name, bucket_name, forecast_reference_time=forecast_reference_time)
     else:
         raise ValueError("only possible sources are s3 and IPFS")
     # Filter data down temporally, then spatially, and check that the size of resulting dataset fits within the limit.
     # While a user can get the entire DS by providing no filters, \
     # this will almost certainly cause the size checks to fail
+    if forecast_reference_time:
+        ds = get_forecast_dataset(ds, forecast_reference_time)
     if time_range:
         ds = get_data_in_time_range(ds, *time_range)
     if point_kwargs:
