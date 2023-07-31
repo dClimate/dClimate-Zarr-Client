@@ -271,5 +271,30 @@ class TestClient:
             get_dataset_from_s3_mock.assert_called_with(
                 dataset_name,
                 bucket_name,
-                forecast_hour
+                forecast_hour=forecast_hour
+            )
+
+        def test__given_bucket_and_dataset_names_and_forecast_hour_then__fetch_geo_temporal_query_from_S3(
+                self,
+                mocker,
+                fake_dataset
+        ):
+            dataset_name = "gfs_temp_max"
+            bucket_name = "zarr-prod",
+            forecast_hour = 62
+            get_dataset_from_s3_mock = mocker.patch(
+                "dclimate_zarr_client.client.get_dataset_from_s3", return_value=fake_dataset)
+            mocker.patch("dclimate_zarr_client.client._prepare_dict", return_value=fake_dataset)
+
+            client.geo_temporal_query(
+                dataset_name=dataset_name,
+                source="s3",
+                bucket_name=bucket_name,
+                forecast_hour=forecast_hour
+            )
+
+            get_dataset_from_s3_mock.assert_called_with(
+                dataset_name,
+                bucket_name,
+                forecast_hour=forecast_hour
             )
