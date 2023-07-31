@@ -135,7 +135,7 @@ def get_dataset_by_ipfs_hash(ipfs_hash: str) -> xr.Dataset:
     """
     ipfs_mapper = get_ipfs_mapper(host=_get_host(uri=""))
     ipfs_mapper.set_root(ipfs_hash)
-    return xr.open_zarr(ipfs_mapper)
+    return xr.open_zarr(ipfs_mapper, chunks=None)
 
 
 def get_dataset_by_ipns_hash(

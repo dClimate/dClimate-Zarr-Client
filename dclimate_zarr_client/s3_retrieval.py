@@ -33,7 +33,7 @@ def get_dataset_from_s3(dataset_name: str, bucket_name: str) -> xr.Dataset:
     """
     try:
         s3_map = S3Map(f"s3://{bucket_name}/datasets/{dataset_name}.zarr", s3=get_s3_fs(), check=True)
-        ds = xr.open_zarr(s3_map)
+        ds = xr.open_zarr(s3_map, chunks=None)
     except ValueError:
         raise DatasetNotFoundError("Invalid dataset name")
     if ds.update_in_progress:
