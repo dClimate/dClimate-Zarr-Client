@@ -91,13 +91,13 @@ def _check_input_parameters(time_period=None, agg_method=None):
                 'min', 'max', 'median', 'mean', 'std', 'sum'"
         )
 
-def get_forecast_dataset(ds: xr.Dataset, forecast_reference_time: datetime.datetime) -> xr.Dataset:
+def get_forecast_dataset(ds: xr.Dataset, forecast_reference_time: str) -> xr.Dataset:
     """
     Filter a 4D forecast dataset to a 3D dataset ready for analysis
 
     Args:
         xr.Dataset: 4D Xarray dataset containing time (forecast_reference_time) and forecast hour (step) dimensions
-        forecast_hor (int): integer representing the desired forecast hour
+        forecast_reference_time (str): Isoformatted string representing the desire date to return all available forecasts for
 
     Returns:
         xr.Dataset: 3D Xarray dataset with forecast hour added to time dimension
