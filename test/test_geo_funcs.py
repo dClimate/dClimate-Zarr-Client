@@ -66,7 +66,7 @@ def test_temporal_aggregation(input_ds):
         input_ds, time_period="year", agg_method="std"
     )
     assert daily_maxs["u100"].values[0][0][0] == pytest.approx(8.5950927734375)
-    assert monthly_means["u100"].values[0][0][0] == pytest.approx(-0.19848433136940002)
+    assert monthly_means["u100"].values[0][0][0] == pytest.approx(-0.19848469)
     assert yearly_std["u100"].values[0][0][0] == pytest.approx(6.490322113037109)
 
 

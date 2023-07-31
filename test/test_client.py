@@ -257,17 +257,19 @@ class TestClient:
         ):
             dataset_name = "copernicus_ocean_salinity_1p5_meters"
             bucket_name = "zarr-prod",
+            forecast_hour = None
             get_dataset_from_s3_mock = mocker.patch(
                 "dclimate_zarr_client.client.get_dataset_from_s3", return_value=fake_dataset)
             mocker.patch("dclimate_zarr_client.client._prepare_dict", return_value=fake_dataset)
 
             client.geo_temporal_query(
-                dataset_name,
+                dataset_name=dataset_name,
                 bucket_name=bucket_name,
-                source="s3"
+                source="s3",
             )
 
             get_dataset_from_s3_mock.assert_called_with(
                 dataset_name,
-                bucket_name
+                bucket_name,
+                forecast_hour
             )
