@@ -3,6 +3,7 @@ import os
 from s3fs import S3FileSystem, S3Map
 import typing
 import json
+import numpy as np
 import xarray as xr
 
 from dclimate_zarr_client.dclimate_zarr_errors import DatasetNotFoundError
@@ -21,7 +22,7 @@ def get_s3_fs() -> S3FileSystem:
         return S3FileSystem(anon=False)
 
 
-def get_dataset_from_s3(dataset_name: str, bucket_name: str) -> xr.Dataset:
+def get_dataset_from_s3(dataset_name: str, bucket_name: str, forecast_hour: int = None) -> xr.Dataset:
     """Get a dataset from s3 from its name
 
     Args:
@@ -36,6 +37,8 @@ def get_dataset_from_s3(dataset_name: str, bucket_name: str) -> xr.Dataset:
         ds = xr.open_zarr(s3_map, chunks=None)
     except ValueError:
         raise DatasetNotFoundError("Invalid dataset name")
+    if forecast_hour:
+        ds = filter_forecast_dataset(ds, forecast_hour)
     if ds.update_in_progress:
         if ds.update_is_append_only:
             start, end = ds.attrs["date range"][0], ds.attrs["update_previous_end_date"]
@@ -50,6 +53,28 @@ def get_dataset_from_s3(dataset_name: str, bucket_name: str) -> xr.Dataset:
         )
         ds = ds.sel(time=date_range)
 
+    return ds
+
+
+def filter_forecast_dataset(ds: xr.Dataset, forecast_hour: int) -> xr.Dataset:
+    """
+    Filter a 4D forecast dataset to a 3D dataset ready for analysis
+
+    Args:
+        xr.Dataset: 4D Xarray dataset containing time (forecast_reference_time) and forecast hour (step) dimensions
+        forecast_hor (int): integer representing the desired forecast hour
+
+    Returns:
+        xr.Dataset: 3D Xarray dataset with forecast hour added to time dimension
+    """
+    # select the desired forecast hour; must convert to the nanosecond unit used internally by timedelta64
+    ds = ds.sel(step=np.timedelta64(forecast_hour * 3600000000000))
+    # Keep time dim name consistent
+    ds = ds.rename({"forecast_reference_time" : "time"})
+    # Set time to equal the forecast time, not the forecast reference time. Assumes only one forecast step is returned
+    ds = ds.assign_coords(time=ds.time.values + ds.step.values)
+    # Remove forecast hour
+    ds = ds.squeeze().drop('step')
     return ds
 
 
