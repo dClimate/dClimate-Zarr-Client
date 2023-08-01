@@ -8,10 +8,12 @@ import typing
 import numpy as np
 import xarray as xr
 
+from xarray.core.variable import MissingDimensionsError
 from .dclimate_zarr_errors import (
     ConflictingGeoRequestError,
     ConflictingAggregationRequestError,
     InvalidExportFormatError,
+    InvalidForecastRequestError
 )
 from .geo_temporal_utils import (
     check_dataset_size,
@@ -207,8 +209,14 @@ def geo_temporal_query(
     # Filter data down temporally, then spatially, and check that the size of resulting dataset fits within the limit.
     # While a user can get the entire DS by providing no filters, \
     # this will almost certainly cause the size checks to fail
+    if "forecast_reference_time" in ds and not forecast_reference_time:
+        raise InvalidForecastRequestError("Forecast dataset requested without forecast reference time. \
+                                   Provide a forecast reference time or request to a different dataset if you desire observations, not projections.")
     if forecast_reference_time:
-        ds = get_forecast_dataset(ds, forecast_reference_time)
+        if "forecast_reference_time" in ds:
+            ds = get_forecast_dataset(ds, forecast_reference_time)
+        else:
+            raise MissingDimensionsError(f"Forecasts are not available for the requested dataset {dataset_name}")
     if time_range:
         ds = get_data_in_time_range(ds, *time_range)
     if point_kwargs:
