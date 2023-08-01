@@ -195,6 +195,11 @@ def geo_temporal_query(
         raise InvalidExportFormatError(
             "User requested an invalid export format. Only 'array' or 'netcdf' permitted."
         )
+    try:
+        datetime.datetime.fromisoformat(forecast_reference_time)
+    except ValueError:
+        raise ValueError("Invalid isoformat string passed as forecast reference time. \
+                         Please pass an isoformatted string, e.g. '2023-07-05'")
     # Set defaults to avoid Nones accidentally passed by users causing a TypeError
     if not point_limit:
         point_limit = DEFAULT_POINT_LIMIT
