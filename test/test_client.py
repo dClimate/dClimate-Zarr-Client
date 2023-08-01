@@ -2,6 +2,7 @@ import datetime
 import pathlib
 
 import numpy as np
+import pandas as pd
 import pytest
 import xarray as xr
 import zarr
@@ -252,10 +253,10 @@ class TestClient:
 
         @pytest.fixture()
         def fake_forecast_dataset(self):
-            forecast_reference_time = xr.DataArray(np.arange(1), dims="forecast_reference_time", 
-                                                   coords={"forecast_reference_time": np.arange(1)})
-            step = xr.DataArray(np.arange(3600000000000, 18000000000000, 3600000000000), dims="step",
-                               coords={"step": np.arange(3600000000000, 18000000000000, 3600000000000)})
+            forecast_reference_time = xr.DataArray(data=pd.date_range("2021-05-05", periods=1), dims="forecast_reference_time", 
+                                                   coords={"forecast_reference_time": pd.date_range("2021-05-05", periods=1)})
+            step = xr.DataArray(data=np.array(np.arange(3600000000000, 18000000000000, 3600000000000), dtype='timedelta64[ns]'), dims="step",
+                               coords={"step": np.array(np.arange(3600000000000, 18000000000000, 3600000000000), dtype='timedelta64[ns]')})
             lat = xr.DataArray(np.arange(10, 50, 10), dims="lat",
                                coords={"lat": np.arange(10, 50, 10)})
             lon = xr.DataArray(np.arange(100, 140, 10), dims="lon",
@@ -297,7 +298,7 @@ class TestClient:
         ):
             dataset_name = "gfs_temp_max"
             bucket_name = "zarr-prod",
-            forecast_reference_time = 1
+            forecast_reference_time = '2021-05-05'
             get_dataset_from_s3_mock = mocker.patch(
                 "dclimate_zarr_client.client.get_dataset_from_s3", return_value=fake_forecast_dataset)
             mocker.patch("dclimate_zarr_client.client._prepare_dict", return_value=fake_forecast_dataset)
