@@ -91,7 +91,7 @@ def _check_input_parameters(time_period=None, agg_method=None):
                 'min', 'max', 'median', 'mean', 'std', 'sum'"
         )
 
-def get_forecast_dataset(ds: xr.Dataset, forecast_reference_time: str) -> xr.Dataset:
+def get_forecast_dataset(ds: xr.Dataset, forecast_reference_time: datetime.datetime) -> xr.Dataset:
     """
     Filter a 4D forecast dataset to a 3D dataset ready for analysis
 

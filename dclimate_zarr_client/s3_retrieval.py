@@ -22,7 +22,7 @@ def get_s3_fs() -> S3FileSystem:
         return S3FileSystem(anon=False)
 
 
-def get_dataset_from_s3(dataset_name: str, bucket_name: str, forecast_reference_time: int = None) -> xr.Dataset:
+def get_dataset_from_s3(dataset_name: str, bucket_name: str) -> xr.Dataset:
     """Get a dataset from s3 from its name
 
     Args:
