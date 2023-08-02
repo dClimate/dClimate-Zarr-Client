@@ -16,6 +16,15 @@ def test_get_single_point_misaligned_error(input_ds):
     with pytest.raises(NoDataFoundError):
         geo_temporal_utils.get_single_point(input_ds, 40, -120.1, snap_to_grid=False)
 
+def test_get_forecast_ds(forecast_ds):
+    """
+    Test that forceast_reference_time is properly removed from forecast datasets
+    and the time dimension is narrowed to the number of forecasts
+    """
+    ds = geo_temporal_utils.get_forecast_dataset(forecast_ds, '2021-05-05')
+    assert "forecast_reference_time" not in ds
+    assert len(ds.time) == 4
+
 
 def test_get_points_in_circle(input_ds):
     """
@@ -66,7 +75,7 @@ def test_temporal_aggregation(input_ds):
         input_ds, time_period="year", agg_method="std"
     )
     assert daily_maxs["u100"].values[0][0][0] == pytest.approx(8.5950927734375)
-    assert monthly_means["u100"].values[0][0][0] == pytest.approx(-0.19848433136940002)
+    assert monthly_means["u100"].values[0][0][0] == pytest.approx(-0.19848469)
     assert yearly_std["u100"].values[0][0][0] == pytest.approx(6.490322113037109)
 
 

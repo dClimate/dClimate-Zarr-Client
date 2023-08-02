@@ -10,6 +10,10 @@ def input_ds():
     with zarr.ZipStore("etc/retrieval_test.zip", mode="r") as in_zarr:
         return xr.open_zarr(in_zarr, chunks=None).compute()
 
+@pytest.fixture
+def forecast_ds():
+    with zarr.ZipStore("etc/forecast_retrieval_test.zip", mode="r") as in_zarr:
+        return xr.open_zarr(in_zarr, chunks=None).compute()
 
 @pytest.fixture
 def oversized_polygons_mask():

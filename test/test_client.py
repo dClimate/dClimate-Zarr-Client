@@ -14,8 +14,9 @@ from dclimate_zarr_client.dclimate_zarr_errors import (
     NoDataFoundError,
     ConflictingAggregationRequestError,
     InvalidExportFormatError,
+    InvalidForecastRequestError
 )
-
+from xarray.core.variable import MissingDimensionsError
 
 def patched_get_ipns_name_hash(ipns_key):
     """
@@ -35,6 +36,18 @@ def patched_get_dataset_by_ipns_hash(ipfs_hash, as_of):
         return xr.open_zarr(in_zarr).compute()
 
 
+def patched_get_dataset_from_s3(dataset_name: str, bucket_name: str):
+    """
+    Patch ipns dataset function to return a prepared dataset for testing
+    """
+    dataset_name = dataset_name.split('-')[0]  # remove -hourly, -daily, etc.
+    with zarr.ZipStore(
+            pathlib.Path(__file__).parent / "etc" / "sample_zarrs" / f"{dataset_name}_test.zip",
+            mode="r",
+    ) as in_zarr:
+        return xr.open_zarr(in_zarr).compute()
+
+
 @pytest.fixture(scope="module", autouse=True)
 def default_session_fixture(module_mocker):
     """
@@ -47,6 +60,10 @@ def default_session_fixture(module_mocker):
     module_mocker.patch(
         "dclimate_zarr_client.client.get_dataset_by_ipns_hash",
         patched_get_dataset_by_ipns_hash,
+    )
+    module_mocker.patch(
+        "dclimate_zarr_client.client.get_dataset_from_s3",
+        patched_get_dataset_from_s3,
     )
 
 
@@ -160,6 +177,33 @@ def test_geo_conflicts():
         "User requested spatial aggregation methods on a single point"
     )
 
+def test_geo_forecast_conflicts():
+    """
+    Test that `geo_temporal_query` fails as predicted when bad forecast requests are specified.
+    """
+    with pytest.raises(InvalidForecastRequestError) as invalid_forecast_exc_info:
+        client.geo_temporal_query(
+            dataset_name="gfs_temp_max-hourly",
+            bucket_name="zarr-dev",
+            source="s3",
+            rectangle_kwargs={
+                "min_lat": 39.75,
+                "min_lon": -120.5,
+                "max_lat": 40.25,
+                "max_lon": -119.5,
+            },
+        )
+    with pytest.raises(MissingDimensionsError) as missing_forecast_exc_info:
+        client.geo_temporal_query(
+            dataset_name="era5_wind_100m_u-hourly",
+            bucket_name="zarr-dev",
+            forecast_reference_time="2023-03-03",
+        )
+    assert invalid_forecast_exc_info.match("Forecast dataset requested without forecast reference time. \
+             Provide a forecast reference time or request to a different dataset if you desire observations, not projections.")
+    assert missing_forecast_exc_info.match(
+        "Forecasts are not available for the requested dataset era5_wind_100m_u-hourly"
+    )
 
 def test_temp_agg_conflicts():
     """
@@ -273,8 +317,7 @@ class TestClient:
                 fake_dataset
         ):
             dataset_name = "copernicus_ocean_salinity_1p5_meters"
-            bucket_name = "zarr-prod",
-            forecast_reference_time = None
+            bucket_name = "zarr-prod",  
             get_dataset_from_s3_mock = mocker.patch(
                 "dclimate_zarr_client.client.get_dataset_from_s3", return_value=fake_dataset)
             mocker.patch("dclimate_zarr_client.client._prepare_dict", return_value=fake_dataset)
@@ -287,8 +330,7 @@ class TestClient:
 
             get_dataset_from_s3_mock.assert_called_with(
                 dataset_name,
-                bucket_name,
-                forecast_reference_time=forecast_reference_time
+                bucket_name
             )
 
         def test__given_bucket_and_dataset_names_and_forecast_reference_time_then__fetch_geo_temporal_query_from_S3(
@@ -312,6 +354,5 @@ class TestClient:
 
             get_dataset_from_s3_mock.assert_called_with(
                 dataset_name,
-                bucket_name,
-                forecast_reference_time=forecast_reference_time
+                bucket_name
             )
