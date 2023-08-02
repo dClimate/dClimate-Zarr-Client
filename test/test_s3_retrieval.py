@@ -15,7 +15,7 @@ class TestS3Retrieval:
         return fake_s3fs
 
     class TestGetDataSetFromS3Function:
-        def test__given_a_dataset_name_and_bucker_name__it_fetch_the_dataset(self, mocker,
+        def test__given_a_dataset_name_and_bucket_name__it_fetch_the_dataset(self, mocker,
                                                                              fake_s3fs):
             dataset_name = "copernicus_ocean_salinity_1p5_meters-daily"
             bucket_name = "zarr-prod"

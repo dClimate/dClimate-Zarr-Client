@@ -3,6 +3,7 @@ import os
 from s3fs import S3FileSystem, S3Map
 import typing
 import json
+import numpy as np
 import xarray as xr
 
 from dclimate_zarr_client.dclimate_zarr_errors import DatasetNotFoundError
@@ -33,7 +34,7 @@ def get_dataset_from_s3(dataset_name: str, bucket_name: str) -> xr.Dataset:
     """
     try:
         s3_map = S3Map(f"s3://{bucket_name}/datasets/{dataset_name}.zarr", s3=get_s3_fs(), check=True)
-        ds = xr.open_zarr(s3_map)
+        ds = xr.open_zarr(s3_map, chunks=None)
     except ValueError:
         raise DatasetNotFoundError("Invalid dataset name")
     if ds.update_in_progress:
@@ -48,7 +49,10 @@ def get_dataset_from_s3(dataset_name: str, bucket_name: str) -> xr.Dataset:
         date_range = slice(
             *[datetime.datetime.strptime(t, "%Y%m%d%H") for t in (start, end)]
         )
-        ds = ds.sel(time=date_range)
+        if "time" in ds:
+            ds = ds.sel(time=date_range)
+        elif "forecast_reference_time" in ds:
+            ds = ds.sel(forecast_reference_time=date_range)
 
     return ds
 

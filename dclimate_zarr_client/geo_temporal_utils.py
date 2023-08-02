@@ -91,6 +91,27 @@ def _check_input_parameters(time_period=None, agg_method=None):
                 'min', 'max', 'median', 'mean', 'std', 'sum'"
         )
 
+def get_forecast_dataset(ds: xr.Dataset, forecast_reference_time: datetime.datetime) -> xr.Dataset:
+    """
+    Filter a 4D forecast dataset to a 3D dataset ready for analysis
+
+    Args:
+        xr.Dataset: 4D Xarray dataset containing time (forecast_reference_time) and forecast hour (step) dimensions
+        forecast_reference_time (str): Isoformatted string representing the desire date to return all available forecasts for
+
+    Returns:
+        xr.Dataset: 3D Xarray dataset with forecast hour added to time dimension
+    """
+    # select only the requested date
+    ds = ds.sel(forecast_reference_time=forecast_reference_time)
+    # Set time to equal the forecast time, not the forecast reference time. Assumes only one forecast reference time is returned
+    ds = ds.assign_coords(step=ds.forecast_reference_time.values + ds.step.values)
+    # Remove forecast reference hour
+    ds = ds.squeeze().drop('forecast_reference_time')
+    # Make forecasted data the time dimension
+    ds = ds.rename({"step" : "time"})
+    return ds
+
 
 def get_single_point(
     ds: xr.Dataset, lat: float, lon: float, snap_to_grid: bool = True

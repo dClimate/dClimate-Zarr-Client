@@ -40,6 +40,12 @@ class DatasetNotFoundError(ZarrClientError):
     pass
 
 
+class InvalidForecastRequestError(ZarrClientError):
+    """Raised when regular time series are requested from a forecast dataset"""
+
+    pass
+
+
 class InvalidAggregationMethodError(ZarrClientError):
     """Raised when user provides an aggregation method outside of [min, max, median, mean, std, sum]"""
 
