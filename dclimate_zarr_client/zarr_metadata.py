@@ -6,21 +6,13 @@ import os
 import json
 
 def get_standard_collections(bucket_name: str) -> typing.List[str]:
-    s3 = get_s3_fs()
-    _validate_bucket_name(bucket_name)
-    catalog_metadata_path = f"{bucket_name}/metadata/Arbol Data Catalog.json"
-    _validate_path(catalog_metadata_path)
-    catalog_metadata = json.loads(open(s3.cat_file(catalog_metadata_path)).read())
+    catalog_metadata = get_catalog_metadata(bucket_name)
     return [collection["title"] for collection in catalog_metadata["links"] 
             if "forecast" not in collection["title"].lower() and "root catalog" not in collection["title"]]
 
 
 def get_forecast_collections(bucket_name: str) -> typing.List[str]:
-    s3 = get_s3_fs()
-    _validate_bucket_name(bucket_name)
-    catalog_metadata_path = f"{bucket_name}/metadata/Arbol Data Catalog.json"
-    _validate_path(catalog_metadata_path)
-    catalog_metadata = json.loads(open(s3.cat_file(catalog_metadata_path)).read())
+    catalog_metadata = get_catalog_metadata(bucket_name)
     return [collection["title"] for collection in catalog_metadata["links"] 
             if "forecast" in collection["title"].lower() and "root catalog" not in collection["title"]]
 

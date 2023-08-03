@@ -29,20 +29,22 @@ class TestZarrMetadata:
             assert str(e.value) == f"Bucket {invalid_bucket_name} does not exist"
 
         def test__given_a_valid_bucket_name_and_bucket_contains_collections__then__they_are_returned(
-                self, mocker, s3_fs):
-            s3_fs.cat_file = mocker.Mock(
-                return_value="data/zarr-dev/metadata/Arbol Data Catalog.json"
-                )
+                self, mocker):
+            mocker.patch(
+                "dclimate_zarr_client.zarr_metadata.get_catalog_metadata",
+                return_value=json.loads(open("data/zarr-dev/metadata/Data Catalog.json").read())
+            )
             bucket_name = "zarr-dev"
 
             collections = get_standard_collections(bucket_name)
-            assert collections == ['Climate Prediction Center (CPC)', 'Parameter-elevation Regressions on Independent Slopes Model (PRISM)', 'Copernicus Marine Anaylsis and Reanalysis of Sea Surface Height Above Geoid', 'ECMWF Reanalysis 5th Generation (ERA5)']
+            assert collections == ['Climate Prediction Center (CPC)', 'ECMWF Reanalysis 5th Generation (ERA5)']
 
         def test__given_a_valid_bucket_name_and_bucket_contains_forecast_collections__then__they_are_returned(
-                self, mocker, s3_fs):
-            s3_fs.cat_file = mocker.Mock(
-                return_value="data/zarr-dev/metadata/Arbol Data Catalog.json"
-                )
+                self, mocker):
+            mocker.patch(
+                "dclimate_zarr_client.zarr_metadata.get_catalog_metadata",
+                return_value=json.loads(open("data/zarr-dev/metadata/Data Catalog.json").read())
+            )
             bucket_name = "zarr-dev"
 
             collections = get_forecast_collections(bucket_name)
@@ -50,9 +52,10 @@ class TestZarrMetadata:
 
         def test__given_a_valid_bucket_name_and_bucket_does_not_contain_collections__then__empty_array_is_returned(
                 self, mocker, s3_fs):
-            s3_fs.cat_file = mocker.Mock(
-                return_value="data/zarr-dev/metadata/Arbol Empty Data Catalog.json"
-                )
+            mocker.patch(
+                "dclimate_zarr_client.zarr_metadata.get_catalog_metadata",
+                return_value=json.loads(open("data/zarr-dev/metadata/Empty Data Catalog.json").read())
+            )
             bucket_name = "zarr-dev"
 
             collections = get_standard_collections(bucket_name)

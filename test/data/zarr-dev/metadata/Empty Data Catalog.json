@@ -1,0 +1,21 @@
+{
+    "id": "XYZ_organization_data_catalog",
+    "type": "Catalog",
+    "title": "XYZ Organization Data Catalog",
+    "stac_version": "1.0.0",
+    "description": "This catalog contains all the data uploaded to XYZ Organization that has been issued STAC-compliant metadata. The catalogs and collections describe single providers. Each may contain one or multiple datasets. Each individual dataset has been documented as STAC Items.",
+    "links": [
+        {
+            "rel": "root",
+            "href": "s3://zarr-dev/metadata/Data Catalog.json",
+            "type": "application/json",
+            "title": "XYZ Organization root catalog"
+        },
+        {
+            "rel": "self",
+            "href": "s3://zarr-dev/metadata/Data Catalog.json",
+            "type": "application/json",
+            "title": "XYZ Organization root catalog"
+        }
+    ]
+}
