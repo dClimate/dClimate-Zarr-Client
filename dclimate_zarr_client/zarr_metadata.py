@@ -7,13 +7,13 @@ import json
 
 def get_standard_collections(bucket_name: str) -> typing.List[str]:
     catalog_metadata = get_catalog_metadata(bucket_name)
-    return [collection["title"] for collection in catalog_metadata["links"] 
+    return [os.path.splitext(collection["href"])[0].split('collections/')[1] for collection in catalog_metadata["links"] 
             if "forecast" not in collection["title"].lower() and "root catalog" not in collection["title"]]
 
 
 def get_forecast_collections(bucket_name: str) -> typing.List[str]:
     catalog_metadata = get_catalog_metadata(bucket_name)
-    return [collection["title"] for collection in catalog_metadata["links"] 
+    return [os.path.splitext(collection["href"])[0].split('collections/')[1] for collection in catalog_metadata["links"] 
             if "forecast" in collection["title"].lower() and "root catalog" not in collection["title"]]
 
 

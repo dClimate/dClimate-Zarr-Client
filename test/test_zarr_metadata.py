@@ -37,7 +37,7 @@ class TestZarrMetadata:
             bucket_name = "zarr-dev"
 
             collections = get_standard_collections(bucket_name)
-            assert collections == ['Climate Prediction Center (CPC)', 'ECMWF Reanalysis 5th Generation (ERA5)']
+            assert collections == ['CPC', 'ERA5']
 
         def test__given_a_valid_bucket_name_and_bucket_contains_forecast_collections__then__they_are_returned(
                 self, mocker):
@@ -48,7 +48,7 @@ class TestZarrMetadata:
             bucket_name = "zarr-dev"
 
             collections = get_forecast_collections(bucket_name)
-            assert collections == ["Global Forecast System (GFS)"]
+            assert collections == ["GFS"]
 
         def test__given_a_valid_bucket_name_and_bucket_does_not_contain_collections__then__empty_array_is_returned(
                 self, mocker, s3_fs):
