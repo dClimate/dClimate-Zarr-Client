@@ -5,11 +5,24 @@ import typing
 import os
 import json
 
-def get_collections(bucket_name: str) -> typing.List[str]:
+def get_standard_collections(bucket_name: str) -> typing.List[str]:
     s3 = get_s3_fs()
     _validate_bucket_name(bucket_name)
-    collections = s3.ls(f'{bucket_name}/metadata/collections', detail=False)
-    return [_extract_file_name_from_path(collection) for collection in collections]
+    catalog_metadata_path = f"{bucket_name}/metadata/Arbol Data Catalog.json"
+    _validate_path(catalog_metadata_path)
+    catalog_metadata = json.loads(open(s3.cat_file(catalog_metadata_path)).read())
+    return [collection["title"] for collection in catalog_metadata["links"] 
+            if "forecast" not in collection["title"].lower() and "root catalog" not in collection["title"]]
+
+
+def get_forecast_collections(bucket_name: str) -> typing.List[str]:
+    s3 = get_s3_fs()
+    _validate_bucket_name(bucket_name)
+    catalog_metadata_path = f"{bucket_name}/metadata/Arbol Data Catalog.json"
+    _validate_path(catalog_metadata_path)
+    catalog_metadata = json.loads(open(s3.cat_file(catalog_metadata_path)).read())
+    return [collection["title"] for collection in catalog_metadata["links"] 
+            if "forecast" in collection["title"].lower() and "root catalog" not in collection["title"]]
 
 
 def get_collection_metadata(bucket_name: str, collection_name: str):

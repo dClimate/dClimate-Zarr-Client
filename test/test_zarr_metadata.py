@@ -6,8 +6,8 @@ import pytest
 from dclimate_zarr_client.dclimate_zarr_errors import BucketNotFoundError, PathNotFoundError, \
     ZarrClientError
 
-from dclimate_zarr_client.zarr_metadata import get_collections, get_collection_metadata, \
-    get_collection_datasets, get_dataset_metadata, get_catalog_metadata
+from dclimate_zarr_client.zarr_metadata import get_standard_collections, get_forecast_collections, \
+get_collection_metadata, get_collection_datasets, get_dataset_metadata, get_catalog_metadata
 
 
 class TestZarrMetadata:
@@ -24,26 +24,38 @@ class TestZarrMetadata:
             invalid_bucket_name = "invalid_bucket_name"
 
             with pytest.raises(BucketNotFoundError) as e:
-                get_collections(invalid_bucket_name)
+                get_standard_collections(invalid_bucket_name)
 
             assert str(e.value) == f"Bucket {invalid_bucket_name} does not exist"
 
         def test__given_a_valid_bucket_name_and_bucket_contains_collections__then__they_are_returned(
                 self, mocker, s3_fs):
-            s3_fs.ls = mocker.Mock(return_value=['zarr-dev/metadata/collections/CHIRPS.json',
-                                                 'zarr-dev/metadata/collections/ERA5_test.json'])
+            s3_fs.cat_file = mocker.Mock(
+                return_value="data/zarr-dev/metadata/Arbol Data Catalog.json"
+                )
             bucket_name = "zarr-dev"
 
-            collections = get_collections(bucket_name)
+            collections = get_standard_collections(bucket_name)
+            assert collections == ['Climate Prediction Center (CPC)', 'Parameter-elevation Regressions on Independent Slopes Model (PRISM)', 'Copernicus Marine Anaylsis and Reanalysis of Sea Surface Height Above Geoid', 'ECMWF Reanalysis 5th Generation (ERA5)']
 
-            assert collections == ['CHIRPS', 'ERA5_test']
+        def test__given_a_valid_bucket_name_and_bucket_contains_forecast_collections__then__they_are_returned(
+                self, mocker, s3_fs):
+            s3_fs.cat_file = mocker.Mock(
+                return_value="data/zarr-dev/metadata/Arbol Data Catalog.json"
+                )
+            bucket_name = "zarr-dev"
+
+            collections = get_forecast_collections(bucket_name)
+            assert collections == ["Global Forecast System (GFS)"]
 
         def test__given_a_valid_bucket_name_and_bucket_does_not_contain_collections__then__empty_array_is_returned(
                 self, mocker, s3_fs):
-            s3_fs.ls = mocker.Mock(return_value=[])
+            s3_fs.cat_file = mocker.Mock(
+                return_value="data/zarr-dev/metadata/Arbol Empty Data Catalog.json"
+                )
             bucket_name = "zarr-dev"
 
-            collections = get_collections(bucket_name)
+            collections = get_standard_collections(bucket_name)
 
             assert collections == []
 
