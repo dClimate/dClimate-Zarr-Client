@@ -23,8 +23,17 @@ def test_get_forecast_ds(forecast_ds):
     """
     ds = geo_temporal_utils.get_forecast_dataset(forecast_ds, '2021-05-05')
     assert "forecast_reference_time" not in ds
-    assert len(forecast_ds.step) == 5
-    assert len(ds.time) == 7  # tests that "missing" steps are successfully filled in by `reindex`
+    assert len(ds.time) == 5
+
+
+def test_reindex_forecast_ds(forecast_ds):
+    """
+    Test that forceast_reference_time is properly removed from forecast datasets
+    and the time dimension is narrowed to the number of forecasts
+    """
+    ds = geo_temporal_utils.get_forecast_dataset(forecast_ds, '2021-05-05')
+    reindexed_ds = geo_temporal_utils.reindex_forecast_dataset(ds)
+    assert len(reindexed_ds.time) == 7  # tests that "missing" steps are successfully filled in by `reindex`
 
 
 def test_get_points_in_circle(input_ds):
