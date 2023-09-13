@@ -19,6 +19,7 @@ from .geo_temporal_utils import (
     check_dataset_size,
     check_has_data,
     get_forecast_dataset,
+    reindex_forecast_dataset,
     get_data_in_time_range,
     get_single_point,
     get_points_in_circle,
@@ -236,6 +237,8 @@ def geo_temporal_query(
     # Check that size of reduced data won't prove too expensive to request and process, according to specified limits
     check_dataset_size(ds, point_limit)
     check_has_data(ds)
+    if forecast_reference_time:
+        ds = reindex_forecast_dataset(ds)
     if multiple_points_kwargs:
         # Aggregations pull whole dataset when ds is structured as multiple points. Forcing xarray to do subsetting
         # before aggregation drastically speeds up agg

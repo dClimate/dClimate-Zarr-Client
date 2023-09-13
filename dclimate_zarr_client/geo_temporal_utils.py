@@ -111,11 +111,22 @@ def get_forecast_dataset(ds: xr.Dataset, forecast_reference_time: datetime.datet
     ds = ds.squeeze().drop('forecast_reference_time')
     # Make forecasted data the time dimension
     ds = ds.rename({"step" : "time"})
-    # Fill in missing forecast hours so the API call returns a full time series with None for missing hours.
-    trange = pd.date_range(start=ds.time[0].values, end=ds.time[-1].values, freq='1H')
-    ds = ds.reindex(time=trange)
     return ds
 
+def reindex_forecast_dataset(ds: xr.Dataset) -> xr.Dataset:
+    """
+    Fill in missing forecast hours so the API call returns a full time series
+      with None for missing (not forecasted) hours.
+    This ensures backwards compatibility with the v3 API.
+
+    Args:
+        xr.Dataset: 3D Xarray dataset with forecast hour added to time dimension
+
+    Returns:
+        xr.Dataset: 3D Xarray dataset with the time dimension reindexed to include hours not forecasted
+    """
+    trange = pd.date_range(start=ds.time[0].values, end=ds.time[-1].values, freq='1H')
+    return ds.reindex(time=trange)
 
 def get_single_point(
     ds: xr.Dataset, lat: float, lon: float, snap_to_grid: bool = True
