@@ -299,13 +299,16 @@ class TestClient:
         def fake_forecast_dataset(self):
             forecast_reference_time = xr.DataArray(data=pd.date_range("2021-05-05", periods=1), dims="forecast_reference_time", 
                                                    coords={"forecast_reference_time": pd.date_range("2021-05-05", periods=1)})
-            step = xr.DataArray(data=np.array(np.arange(3600000000000, 18000000000000, 3600000000000), dtype='timedelta64[ns]'), dims="step",
-                               coords={"step": np.array(np.arange(3600000000000, 18000000000000, 3600000000000), dtype='timedelta64[ns]')})
+            # we add one forecast 3 hours ahead to allow testing of infill behavior (via reindex)
+            step = xr.DataArray(data=np.append(np.array(np.arange(3600000000000, 18000000000000, 3600000000000),
+                                                        dtype='timedelta64[ns]'), 3600000000000 *2 + 18000000000000), dims="step",
+                               coords={"step": np.append(np.array(np.arange(3600000000000, 18000000000000, 3600000000000),
+                                                                  dtype='timedelta64[ns]'), 3600000000000 * 2 + 18000000000000)})
             lat = xr.DataArray(np.arange(10, 50, 10), dims="lat",
                                coords={"lat": np.arange(10, 50, 10)})
             lon = xr.DataArray(np.arange(100, 140, 10), dims="lon",
                                coords={"lon": np.arange(100, 140, 10)})
-            data = xr.DataArray(np.random.randn(1, 4, 4, 4), dims=("forecast_reference_time", "step", "lat", "lon"),
+            data = xr.DataArray(np.random.randn(1, 5, 4, 4), dims=("forecast_reference_time", "step", "lat", "lon"),
                                 coords=(forecast_reference_time, step, lat, lon))
 
             fake_dataset = xr.Dataset({"data_var": data})

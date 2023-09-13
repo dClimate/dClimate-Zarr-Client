@@ -23,7 +23,8 @@ def test_get_forecast_ds(forecast_ds):
     """
     ds = geo_temporal_utils.get_forecast_dataset(forecast_ds, '2021-05-05')
     assert "forecast_reference_time" not in ds
-    assert len(ds.time) == 4
+    assert len(forecast_ds.step) == 5
+    assert len(ds.time) == 7  # tests that "missing" steps are successfully filled in by `reindex`
 
 
 def test_get_points_in_circle(input_ds):

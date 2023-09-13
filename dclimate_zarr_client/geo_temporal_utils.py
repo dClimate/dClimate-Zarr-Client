@@ -3,6 +3,7 @@ import typing
 
 
 import numpy as np
+import pandas as pd
 import geopandas as gpd
 from rioxarray.exceptions import NoDataInBounds
 import xarray as xr
@@ -110,6 +111,9 @@ def get_forecast_dataset(ds: xr.Dataset, forecast_reference_time: datetime.datet
     ds = ds.squeeze().drop('forecast_reference_time')
     # Make forecasted data the time dimension
     ds = ds.rename({"step" : "time"})
+    # Fill in missing forecast hours so the API call returns a full time series with None for missing hours.
+    trange = pd.date_range(start=ds.time[0].values, end=ds.time[-1].values, freq='1H')
+    ds = ds.reindex(time=trange)
     return ds
 
 
