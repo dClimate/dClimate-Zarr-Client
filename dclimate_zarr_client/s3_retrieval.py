@@ -16,10 +16,10 @@ def get_s3_fs() -> S3FileSystem:
     Returns:
         S3FileSystem:
     """
-    if "aws_key" in os.environ and "aws_secret" in os.environ:
-        return S3FileSystem(key=os.environ["aws_key"], secret=os.environ["aws_secret"], skip_instance_cache=True)
+    if "AWS_ACCESS_KEY_ID" in os.environ and "AWS_SECRET_ACCESS_KEY" in os.environ:
+        return S3FileSystem(key=os.environ["AWS_ACCESS_KEY_ID"], secret=os.environ["AWS_SECRET_ACCESS_KEY"])
     else:
-        return S3FileSystem(anon=False, skip_instance_cache=True)
+        return S3FileSystem(anon=False)
 
 
 def get_dataset_from_s3(dataset_name: str, bucket_name: str) -> xr.Dataset:
