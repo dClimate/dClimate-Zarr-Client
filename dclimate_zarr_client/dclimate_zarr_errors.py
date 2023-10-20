@@ -63,10 +63,14 @@ class InvalidExportFormatError(ZarrClientError):
 
     pass
 
+
 class BucketNotFoundError(ZarrClientError):
     """Raised when bucket does not exist in AWS S3"""
+
     pass
+
 
 class PathNotFoundError(ZarrClientError):
     """Raised when bucket does not exist in AWS S3"""
+
     pass
