@@ -15,7 +15,10 @@ def get_s3_fs() -> S3FileSystem:
         S3FileSystem:
     """
     if "AWS_ACCESS_KEY_ID" in os.environ and "AWS_SECRET_ACCESS_KEY" in os.environ:
-        return S3FileSystem(key=os.environ["AWS_ACCESS_KEY_ID"], secret=os.environ["AWS_SECRET_ACCESS_KEY"])
+        return S3FileSystem(
+            key=os.environ["AWS_ACCESS_KEY_ID"],
+            secret=os.environ["AWS_SECRET_ACCESS_KEY"],
+        )
     else:
         return S3FileSystem(anon=False)
 
