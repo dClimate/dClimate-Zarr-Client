@@ -62,10 +62,15 @@ ds_bytes = geo_temporal_query(
 )
 ds = xr.open_dataset(ds_bytes)
 ```
-## Run tests:
+## Run tests for your local environment:
 ```shell
-cd test
-pytest
+cd
+pytest tests
+```
+
+## Run all acceptance tests:
+```shell
+nox
 ```
 
 ## Environment requirements:
