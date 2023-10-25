@@ -1,5 +1,6 @@
 import datetime
 import pathlib
+import unittest
 
 import numpy as np
 import pandas as pd
@@ -18,6 +19,44 @@ from dclimate_zarr_client.dclimate_zarr_errors import (
 )
 from xarray.core.variable import MissingDimensionsError
 
+SAMPLE_ZARRS = pathlib.Path(__file__).parent / "etc" / "sample_zarrs"
+
+
+@unittest.mock.patch("dclimate_zarr_client.client.get_dataset_by_ipns_hash")
+@unittest.mock.patch("dclimate_zarr_client.client.get_ipns_name_hash")
+def test_load_ipns(get_ipns_hash, get_dataset_by_ipns_hash, dataset):
+    get_ipns_hash.return_value = "thehash"
+    get_dataset_by_ipns_hash.return_value = dataset
+
+    data = client.load_ipns("dataset_name")
+    assert data.data is dataset
+
+    get_ipns_hash.assert_called_once_with("dataset_name")
+    get_dataset_by_ipns_hash.assert_called_once_with("thehash", as_of=None)
+
+
+@unittest.mock.patch("dclimate_zarr_client.client.get_dataset_by_ipns_hash")
+@unittest.mock.patch("dclimate_zarr_client.client.get_ipns_name_hash")
+def test_load_ipns_with_as_of(get_ipns_hash, get_dataset_by_ipns_hash, dataset):
+    get_ipns_hash.return_value = "thehash"
+    get_dataset_by_ipns_hash.return_value = dataset
+
+    data = client.load_ipns("dataset_name", as_of="as_of")
+    assert data.data is dataset
+
+    get_ipns_hash.assert_called_once_with("dataset_name")
+    get_dataset_by_ipns_hash.assert_called_once_with("thehash", as_of="as_of")
+
+
+@unittest.mock.patch("dclimate_zarr_client.client.get_dataset_from_s3")
+def test_load_s3(get_dataset_from_s3, dataset):
+    get_dataset_from_s3.return_value = dataset
+
+    data = client.load_s3("bucket_name", "dataset_name")
+    assert data.data is dataset
+
+    get_dataset_from_s3.assert_called_once_with("bucket_name", "dataset_name")
+
 
 def patched_get_ipns_name_hash(ipns_key):
     """
@@ -32,7 +71,7 @@ def patched_get_dataset_by_ipns_hash(ipfs_hash, as_of):
     Patch ipns dataset function to return a prepared dataset for testing
     """
     with zarr.ZipStore(
-        pathlib.Path(__file__).parent / "etc" / "sample_zarrs" / f"{ipfs_hash}.zip",
+        SAMPLE_ZARRS / f"{ipfs_hash}.zip",
         mode="r",
     ) as in_zarr:
         return xr.open_zarr(in_zarr).compute()
@@ -44,17 +83,14 @@ def patched_get_dataset_from_s3(dataset_name: str, bucket_name: str):
     """
     dataset_name = dataset_name.split("-")[0]  # remove -hourly, -daily, etc.
     with zarr.ZipStore(
-        pathlib.Path(__file__).parent
-        / "etc"
-        / "sample_zarrs"
-        / f"{dataset_name}_test.zip",
+        SAMPLE_ZARRS / f"{dataset_name}_test.zip",
         mode="r",
     ) as in_zarr:
         return xr.open_zarr(in_zarr).compute()
 
 
-@pytest.fixture(scope="module", autouse=True)
-def default_session_fixture(module_mocker):
+@pytest.fixture(scope="module")
+def patch_ipns_s3(module_mocker):
     """
     Patch IPNS dataset retrieval functions in this test
     """
@@ -72,6 +108,7 @@ def default_session_fixture(module_mocker):
     )
 
 
+@pytest.mark.usefixtures("patch_ipns_s3")
 def test_geo_temporal_query(polygons_mask, points_mask):
     """
     Test the `geo_temporal_query` method's functionalities: geographic queries,
@@ -96,6 +133,7 @@ def test_geo_temporal_query(polygons_mask, points_mask):
             "max_lat": 40.25,
             "max_lon": -119.5,
         },
+        var_name="u100",
     )
     rectangle_nc = client.geo_temporal_query(
         dataset_name="era5_wind_100m_u-hourly",
@@ -300,7 +338,9 @@ class TestClient:
         @pytest.fixture()
         def fake_dataset(self):
             time = xr.DataArray(
-                np.arange(5), dims="time", coords={"time": np.arange(5)}
+                np.arange(0, 5, dtype="datetime64[ns]"),
+                dims="time",
+                coords={"time": np.arange(5)},
             )
             lat = xr.DataArray(
                 np.arange(10, 50, 10), dims="lat", coords={"lat": np.arange(10, 50, 10)}
@@ -316,7 +356,8 @@ class TestClient:
                 coords=(time, lat, lon),
             )
 
-            fake_dataset = xr.Dataset({"data_var": data})
+            attrs = {"unit of measurement": "mm"}
+            fake_dataset = xr.Dataset({"data_var": data}, attrs=attrs)
             return fake_dataset
 
         @pytest.fixture()
@@ -363,7 +404,8 @@ class TestClient:
                 coords=(forecast_reference_time, step, lat, lon),
             )
 
-            fake_dataset = xr.Dataset({"data_var": data})
+            attrs = {"unit of measurement": "mm"}
+            fake_dataset = xr.Dataset({"data_var": data}, attrs=attrs)
             return fake_dataset
 
         def test__given_bucket_and_dataset_names__then__fetch_geo_temporal_query_from_S3(
@@ -375,9 +417,9 @@ class TestClient:
                 "dclimate_zarr_client.client.get_dataset_from_s3",
                 return_value=fake_dataset,
             )
-            mocker.patch(
-                "dclimate_zarr_client.client._prepare_dict", return_value=fake_dataset
-            )
+            # mocker.patch(
+            #     "dclimate_zarr_client.client._prepare_dict", return_value=fake_dataset
+            # )
 
             client.geo_temporal_query(
                 dataset_name=dataset_name,
@@ -397,10 +439,10 @@ class TestClient:
                 "dclimate_zarr_client.client.get_dataset_from_s3",
                 return_value=fake_forecast_dataset,
             )
-            mocker.patch(
-                "dclimate_zarr_client.client._prepare_dict",
-                return_value=fake_forecast_dataset,
-            )
+            # mocker.patch(
+            #     "dclimate_zarr_client.client._prepare_dict",
+            #     return_value=fake_forecast_dataset,
+            # )
 
             client.geo_temporal_query(
                 dataset_name=dataset_name,

@@ -5,9 +5,6 @@ Functions that will map to endpoints in the flask app
 import datetime
 import typing
 
-import numpy as np
-import xarray as xr
-
 from xarray.core.variable import MissingDimensionsError
 from .dclimate_zarr_errors import (
     ConflictingGeoRequestError,
@@ -15,101 +12,56 @@ from .dclimate_zarr_errors import (
     InvalidExportFormatError,
     InvalidForecastRequestError,
 )
-from .geo_temporal_utils import (
-    check_dataset_size,
-    check_has_data,
-    get_forecast_dataset,
-    reindex_forecast_dataset,
-    get_data_in_time_range,
-    get_single_point,
-    get_points_in_circle,
-    get_points_in_polygons,
-    get_multiple_points,
-    get_points_in_rectangle,
-    rolling_aggregation,
-    spatial_aggregation,
-    temporal_aggregation,
-    DEFAULT_POINT_LIMIT,
-)
+from .geotemporal_data import GeotemporalData, DEFAULT_POINT_LIMIT
 from .ipfs_retrieval import get_dataset_by_ipns_hash, get_ipns_name_hash
 from .s3_retrieval import get_dataset_from_s3
 
 
-def _prepare_dict(ds: xr.Dataset) -> dict:
-    """Prepares dict containing metadata and values from dataset
-
-    Args:
-        ds (xr.Dataset): dataset to turn into dict
-
-    Returns:
-        dict: dict with metadata and data values included
+def load_ipns(
+    dataset_name: str,
+    as_of: typing.Optional[datetime.datetime] = None,
+) -> GeotemporalData:
     """
-    var_name = list(ds.data_vars)[0]
-    vals = ds[var_name].values
-    ret_dict = {}
-    dimensions = []
-    ret_dict["unit of measurement"] = ds.attrs["unit of measurement"]
-    if "time" in ds:
-        ret_dict["times"] = (
-            np.datetime_as_string(ds.time.values, unit="s").flatten().tolist()
-        )
-        dimensions.append("time")
-    if "point" in ds.dims:
-        ret_dict["points"] = list(zip(ds.latitude.values, ds.longitude.values))
-        ret_dict["point_coords_order"] = ["latitude", "longitude"]
-        dimensions.insert(0, "point")
-        ret_dict["data"] = np.where(~np.isfinite(vals), None, vals).T.tolist()
-    else:
-        for dim in ds[var_name].dims:
-            if dim != "time":
-                ret_dict[f"{dim}s"] = ds[dim].values.flatten().tolist()
-                dimensions.append(dim)
-        ret_dict["data"] = np.where(~np.isfinite(vals), None, vals).tolist()
-    ret_dict["dimensions_order"] = dimensions
-    try:
-        if ds.update_in_progress and not ds.update_is_append_only:
-            ret_dict["update_date_range"] = ds.attrs["update_date_range"]
-    except AttributeError:
-        pass
-    return ret_dict
+    Load a Geotemporal dataset from IPLD.
 
+    Parameters
+    ----------
 
-def _prepare_netcdf_bytes(ds: xr.Dataset) -> bytes:
-    """Drops nested attributes from zarr and sets 'updating date range'
-    if the dataset is currently undergoing a historical update, then converts
-    zarr to bytes representing netcdf
-
-    Args:
-        ds (xr.Dataset): dataset to turn into netcdf bytes
-
-    Returns:
-        bytes: netcdf representation of zarr as bytes
+    dataset_name: str
+        Name used to link dataset to an ipns_name hash
+    as_of: datetime.datetime, optional
+        Pull in most recent data created before this time. If ``None``, just get most
+        recent. Defaults to ``None``.
     """
-    try:
-        if ds.update_in_progress and not ds.update_is_append_only:
-            update_date_range = ds.attrs["update_date_range"]
-            ds.attrs[
-                "updating date range"
-            ] = f"{update_date_range[0]}-{update_date_range[1]}"
-    except AttributeError:
-        pass
-    # remove nested and None attributes, which to_netcdf to bytes doesn't support
-    for bad_key in [
-        "bbox",
-        "date range",
-        "tags",
-        "finalization date",
-        "update_date_range",
-    ]:
-        if bad_key in ds.attrs:
-            del ds.attrs[bad_key]
-    return ds.to_netcdf()
+    ipns_name_hash = get_ipns_name_hash(dataset_name)
+    ds = get_dataset_by_ipns_hash(ipns_name_hash, as_of=as_of)
+    return GeotemporalData(ds)
+
+
+def load_s3(
+    dataset_name: str,
+    bucket_name: str,
+) -> GeotemporalData:
+    """
+    Load a Geotemporal dataset from an S3 bucket.
+
+    Parameters
+    ----------
+
+    dataset_name: str
+        The name of the dataset in the bucket.
+    bucket_name: str
+        S3 bucket name where the dataset is going to be fetched
+    """
+    ds = get_dataset_from_s3(dataset_name, bucket_name)
+    return GeotemporalData(ds)
 
 
 def geo_temporal_query(
     dataset_name: str,
     source: str = "ipfs",
     bucket_name: str = None,
+    var_name: str = None,
     forecast_reference_time: str = None,
     point_kwargs: dict = None,
     circle_kwargs: dict = None,
@@ -209,68 +161,56 @@ def geo_temporal_query(
             "User requested an invalid export format. Only 'array' or 'netcdf' "
             "permitted."
         )
+
     # Set defaults to avoid Nones accidentally passed by users causing a TypeError
     if not point_limit:
         point_limit = DEFAULT_POINT_LIMIT
+
     # Use the provided dataset string to find the dataset via IPNS
     if source == "ipfs":
-        ipns_name_hash = get_ipns_name_hash(dataset_name)
-        ds = get_dataset_by_ipns_hash(ipns_name_hash, as_of=as_of)
+        data = load_ipns(dataset_name, as_of=as_of)
     elif source == "s3":
-        ds = get_dataset_from_s3(dataset_name, bucket_name)
+        data = load_s3(dataset_name, bucket_name)
     else:
         raise ValueError("only possible sources are s3 and IPFS")
+
+    # If specific variable is requested, use that
+    if var_name is not None:
+        data = data.use(var_name)
+
     # Filter data down temporally, then spatially, and check that the size of resulting
     # dataset fits within the limit. While a user can get the entire DS by providing no
     # filters, this will almost certainly cause the size checks to fail
-    if "forecast_reference_time" in ds and not forecast_reference_time:
+    if "forecast_reference_time" in data.data and not forecast_reference_time:
         raise InvalidForecastRequestError(
             "Forecast dataset requested without forecast reference time. "
             "Provide a forecast reference time or request to a different dataset if "
             "you desire observations, not projections."
         )
     if forecast_reference_time:
-        if "forecast_reference_time" in ds:
-            ds = get_forecast_dataset(ds, forecast_reference_time)
+        if "forecast_reference_time" in data.data:
+            data = data.forecast(forecast_reference_time)
         else:
             raise MissingDimensionsError(
                 f"Forecasts are not available for the requested dataset {dataset_name}"
             )
-    if time_range:
-        ds = get_data_in_time_range(ds, *time_range)
-    if point_kwargs:
-        ds = get_single_point(ds, **point_kwargs)
-    elif circle_kwargs:
-        ds = get_points_in_circle(ds, **circle_kwargs)
-    elif rectangle_kwargs:
-        ds = get_points_in_rectangle(ds, **rectangle_kwargs)
-    elif polygon_kwargs:
-        ds = get_points_in_polygons(ds, **polygon_kwargs, point_limit=point_limit)
-    elif multiple_points_kwargs:
-        ds = get_multiple_points(ds, **multiple_points_kwargs)
-    # Check that size of reduced data won't prove too expensive to request and process,
-    # according to specified limits
-    check_dataset_size(ds, point_limit)
-    check_has_data(ds)
-    if forecast_reference_time:
-        ds = reindex_forecast_dataset(ds)
-    if multiple_points_kwargs:
-        # Aggregations pull whole dataset when ds is structured as multiple points.
-        # Forcing xarray to do subsetting before aggregation drastically speeds up agg
-        ds = ds.compute()
-    # Perform all requested valid aggregations. First aggregate data spatially, then
-    # temporally or on a rolling basis.
-    if spatial_agg_kwargs:
-        ds = spatial_aggregation(ds, **spatial_agg_kwargs)
-    if temporal_agg_kwargs:
-        ds = temporal_aggregation(ds, **temporal_agg_kwargs)
-    elif rolling_agg_kwargs:
-        ds = rolling_aggregation(ds, **rolling_agg_kwargs)
+
+    data = data.query(
+        forecast_reference_time=forecast_reference_time,
+        point_kwargs=point_kwargs,
+        circle_kwargs=circle_kwargs,
+        rectangle_kwargs=rectangle_kwargs,
+        polygon_kwargs=polygon_kwargs,
+        multiple_points_kwargs=multiple_points_kwargs,
+        spatial_agg_kwargs=spatial_agg_kwargs,
+        temporal_agg_kwargs=temporal_agg_kwargs,
+        rolling_agg_kwargs=rolling_agg_kwargs,
+        time_range=time_range,
+        point_limit=point_limit,
+    )
+
     # Export
     if output_format == "netcdf":
-        return _prepare_netcdf_bytes(ds)
+        return data.to_netcdf()
     else:
-        return _prepare_dict(ds)
-
-
-"""  """
+        return data.as_dict()
