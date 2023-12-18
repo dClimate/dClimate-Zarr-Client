@@ -14,13 +14,15 @@ from dclimate_zarr_client.dclimate_zarr_errors import (
     NoDataFoundError,
     ConflictingAggregationRequestError,
     InvalidExportFormatError,
-    InvalidForecastRequestError
+    InvalidForecastRequestError,
 )
 from xarray.core.variable import MissingDimensionsError
 
+
 def patched_get_ipns_name_hash(ipns_key):
     """
-    Patch ipns name hash retrieval function to return a prepared ipfs key referring to a testing dataset
+    Patch ipns name hash retrieval function to return a prepared ipfs key referring to a
+    testing dataset
     """
     return "bafyreiglm3xvfcwkjbdqlwg3mc6zgngxuyfj6tkgfb6qobtmlzobpp63sq"
 
@@ -30,8 +32,8 @@ def patched_get_dataset_by_ipns_hash(ipfs_hash, as_of):
     Patch ipns dataset function to return a prepared dataset for testing
     """
     with zarr.ZipStore(
-            pathlib.Path(__file__).parent / "etc" / "sample_zarrs" / f"{ipfs_hash}.zip",
-            mode="r",
+        pathlib.Path(__file__).parent / "etc" / "sample_zarrs" / f"{ipfs_hash}.zip",
+        mode="r",
     ) as in_zarr:
         return xr.open_zarr(in_zarr).compute()
 
@@ -40,10 +42,13 @@ def patched_get_dataset_from_s3(dataset_name: str, bucket_name: str):
     """
     Patch ipns dataset function to return a prepared dataset for testing
     """
-    dataset_name = dataset_name.split('-')[0]  # remove -hourly, -daily, etc.
+    dataset_name = dataset_name.split("-")[0]  # remove -hourly, -daily, etc.
     with zarr.ZipStore(
-            pathlib.Path(__file__).parent / "etc" / "sample_zarrs" / f"{dataset_name}_test.zip",
-            mode="r",
+        pathlib.Path(__file__).parent
+        / "etc"
+        / "sample_zarrs"
+        / f"{dataset_name}_test.zip",
+        mode="r",
     ) as in_zarr:
         return xr.open_zarr(in_zarr).compute()
 
@@ -69,10 +74,11 @@ def default_session_fixture(module_mocker):
 
 def test_geo_temporal_query(polygons_mask, points_mask):
     """
-    Test the `geo_temporal_query` method's functionalities: geographic queries, aggregation methods, and export formats
-    Geographic queries include point, rectangle, circle, and polygon queries
-    Aggregation methods include spatial, temporal, and rolling temporal approaches for various mathematical operations
-    Exports can be of numpy array (default) or NetCDF format
+    Test the `geo_temporal_query` method's functionalities: geographic queries,
+    aggregation methods, and export formats Geographic queries include point, rectangle,
+    circle, and polygon queries Aggregation methods include spatial, temporal, and
+    rolling temporal approaches for various mathematical operations Exports can be of
+    numpy array (default) or NetCDF format
     """
     point = client.geo_temporal_query(
         dataset_name="era5_wind_100m_u-hourly",
@@ -151,7 +157,8 @@ def test_geo_temporal_query(polygons_mask, points_mask):
 
 def test_geo_conflicts():
     """
-    Test that `geo_temporal_query` fails as predicted when conflicting geography requests are specified.
+    Test that `geo_temporal_query` fails as predicted when conflicting geography
+    requests are specified.
     """
     with pytest.raises(ConflictingGeoRequestError) as multi_exc_info:
         client.geo_temporal_query(
@@ -177,9 +184,11 @@ def test_geo_conflicts():
         "User requested spatial aggregation methods on a single point"
     )
 
+
 def test_geo_forecast_conflicts():
     """
-    Test that `geo_temporal_query` fails as predicted when bad forecast requests are specified.
+    Test that `geo_temporal_query` fails as predicted when bad forecast requests are
+    specified.
     """
     with pytest.raises(InvalidForecastRequestError) as invalid_forecast_exc_info:
         client.geo_temporal_query(
@@ -199,15 +208,20 @@ def test_geo_forecast_conflicts():
             bucket_name="zarr-dev",
             forecast_reference_time="2023-03-03",
         )
-    assert invalid_forecast_exc_info.match("Forecast dataset requested without forecast reference time. \
-             Provide a forecast reference time or request to a different dataset if you desire observations, not projections.")
+    assert invalid_forecast_exc_info.match(
+        "Forecast dataset requested without forecast reference time. "
+        "Provide a forecast reference time or request to a different dataset if you "
+        "desire observations, not projections."
+    )
     assert missing_forecast_exc_info.match(
         "Forecasts are not available for the requested dataset era5_wind_100m_u-hourly"
     )
 
+
 def test_temp_agg_conflicts():
     """
-    Test that `geo_temporal_query` fails as predicted when conflicting temporal aggregation approaches are specified.
+    Test that `geo_temporal_query` fails as predicted when conflicting temporal
+    aggregation approaches are specified.
     """
     with pytest.raises(ConflictingAggregationRequestError):
         client.geo_temporal_query(
@@ -230,7 +244,8 @@ def test_temp_agg_conflicts():
 
 def test_invalid_export():
     """
-    Test that `geo_temporal_query` fails as predicted when invalid export formats are specified.
+    Test that `geo_temporal_query` fails as predicted when invalid export formats are
+    specified.
     """
     with pytest.raises(InvalidExportFormatError):
         client.geo_temporal_query(
@@ -243,7 +258,8 @@ def test_invalid_export():
 
 def test_selection_size_conflicts(oversized_polygons_mask):
     """
-    Test that `geo_temporal_query` fails as predicted when selections of inappropriate size are requested.
+    Test that `geo_temporal_query` fails as predicted when selections of inappropriate
+    size are requested.
     """
     with pytest.raises(SelectionTooLargeError) as too_many_points_exc_info:
         client.geo_temporal_query(
@@ -281,49 +297,87 @@ def test_multiple_points_not_on_grid(points_mask):
 
 class TestClient:
     class TestGeoTemporalQueryFunction:
-
         @pytest.fixture()
         def fake_dataset(self):
-            time = xr.DataArray(np.arange(5), dims="time", coords={"time": np.arange(5)})
-            lat = xr.DataArray(np.arange(10, 50, 10), dims="lat",
-                               coords={"lat": np.arange(10, 50, 10)})
-            lon = xr.DataArray(np.arange(100, 140, 10), dims="lon",
-                               coords={"lon": np.arange(100, 140, 10)})
-            data = xr.DataArray(np.random.randn(5, 4, 4), dims=("time", "lat", "lon"),
-                                coords=(time, lat, lon))
+            time = xr.DataArray(
+                np.arange(5), dims="time", coords={"time": np.arange(5)}
+            )
+            lat = xr.DataArray(
+                np.arange(10, 50, 10), dims="lat", coords={"lat": np.arange(10, 50, 10)}
+            )
+            lon = xr.DataArray(
+                np.arange(100, 140, 10),
+                dims="lon",
+                coords={"lon": np.arange(100, 140, 10)},
+            )
+            data = xr.DataArray(
+                np.random.randn(5, 4, 4),
+                dims=("time", "lat", "lon"),
+                coords=(time, lat, lon),
+            )
 
             fake_dataset = xr.Dataset({"data_var": data})
             return fake_dataset
 
         @pytest.fixture()
         def fake_forecast_dataset(self):
-            forecast_reference_time = xr.DataArray(data=pd.date_range("2021-05-05", periods=1), dims="forecast_reference_time", 
-                                                   coords={"forecast_reference_time": pd.date_range("2021-05-05", periods=1)})
-            # we add one forecast 3 hours ahead to allow testing of infill behavior (via reindex)
-            step = xr.DataArray(data=np.append(np.array(np.arange(3600000000000, 18000000000000, 3600000000000),
-                                                        dtype='timedelta64[ns]'), 3600000000000 *2 + 18000000000000), dims="step",
-                               coords={"step": np.append(np.array(np.arange(3600000000000, 18000000000000, 3600000000000),
-                                                                  dtype='timedelta64[ns]'), 3600000000000 * 2 + 18000000000000)})
-            lat = xr.DataArray(np.arange(10, 50, 10), dims="lat",
-                               coords={"lat": np.arange(10, 50, 10)})
-            lon = xr.DataArray(np.arange(100, 140, 10), dims="lon",
-                               coords={"lon": np.arange(100, 140, 10)})
-            data = xr.DataArray(np.random.randn(1, 5, 4, 4), dims=("forecast_reference_time", "step", "lat", "lon"),
-                                coords=(forecast_reference_time, step, lat, lon))
+            forecast_reference_time = xr.DataArray(
+                data=pd.date_range("2021-05-05", periods=1),
+                dims="forecast_reference_time",
+                coords={
+                    "forecast_reference_time": pd.date_range("2021-05-05", periods=1)
+                },
+            )
+            # we add one forecast 3 hours ahead to allow testing of infill behavior (via
+            # reindex)
+            step = xr.DataArray(
+                data=np.append(
+                    np.array(
+                        np.arange(3600000000000, 18000000000000, 3600000000000),
+                        dtype="timedelta64[ns]",
+                    ),
+                    3600000000000 * 2 + 18000000000000,
+                ),
+                dims="step",
+                coords={
+                    "step": np.append(
+                        np.array(
+                            np.arange(3600000000000, 18000000000000, 3600000000000),
+                            dtype="timedelta64[ns]",
+                        ),
+                        3600000000000 * 2 + 18000000000000,
+                    )
+                },
+            )
+            lat = xr.DataArray(
+                np.arange(10, 50, 10), dims="lat", coords={"lat": np.arange(10, 50, 10)}
+            )
+            lon = xr.DataArray(
+                np.arange(100, 140, 10),
+                dims="lon",
+                coords={"lon": np.arange(100, 140, 10)},
+            )
+            data = xr.DataArray(
+                np.random.randn(1, 5, 4, 4),
+                dims=("forecast_reference_time", "step", "lat", "lon"),
+                coords=(forecast_reference_time, step, lat, lon),
+            )
 
             fake_dataset = xr.Dataset({"data_var": data})
             return fake_dataset
 
         def test__given_bucket_and_dataset_names__then__fetch_geo_temporal_query_from_S3(
-                self,
-                mocker,
-                fake_dataset
+            self, mocker, fake_dataset
         ):
             dataset_name = "copernicus_ocean_salinity_1p5_meters"
-            bucket_name = "zarr-prod",  
+            bucket_name = ("zarr-prod",)
             get_dataset_from_s3_mock = mocker.patch(
-                "dclimate_zarr_client.client.get_dataset_from_s3", return_value=fake_dataset)
-            mocker.patch("dclimate_zarr_client.client._prepare_dict", return_value=fake_dataset)
+                "dclimate_zarr_client.client.get_dataset_from_s3",
+                return_value=fake_dataset,
+            )
+            mocker.patch(
+                "dclimate_zarr_client.client._prepare_dict", return_value=fake_dataset
+            )
 
             client.geo_temporal_query(
                 dataset_name=dataset_name,
@@ -331,31 +385,28 @@ class TestClient:
                 source="s3",
             )
 
-            get_dataset_from_s3_mock.assert_called_with(
-                dataset_name,
-                bucket_name
-            )
+            get_dataset_from_s3_mock.assert_called_with(dataset_name, bucket_name)
 
         def test__given_bucket_and_dataset_names_and_forecast_reference_time_then__fetch_geo_temporal_query_from_S3(
-                self,
-                mocker,
-                fake_forecast_dataset
+            self, mocker, fake_forecast_dataset
         ):
             dataset_name = "gfs_temp_max"
-            bucket_name = "zarr-prod",
-            forecast_reference_time = '2021-05-05'
+            bucket_name = ("zarr-prod",)
+            forecast_reference_time = "2021-05-05"
             get_dataset_from_s3_mock = mocker.patch(
-                "dclimate_zarr_client.client.get_dataset_from_s3", return_value=fake_forecast_dataset)
-            mocker.patch("dclimate_zarr_client.client._prepare_dict", return_value=fake_forecast_dataset)
+                "dclimate_zarr_client.client.get_dataset_from_s3",
+                return_value=fake_forecast_dataset,
+            )
+            mocker.patch(
+                "dclimate_zarr_client.client._prepare_dict",
+                return_value=fake_forecast_dataset,
+            )
 
             client.geo_temporal_query(
                 dataset_name=dataset_name,
                 source="s3",
                 bucket_name=bucket_name,
-                forecast_reference_time=forecast_reference_time
+                forecast_reference_time=forecast_reference_time,
             )
 
-            get_dataset_from_s3_mock.assert_called_with(
-                dataset_name,
-                bucket_name
-            )
+            get_dataset_from_s3_mock.assert_called_with(dataset_name, bucket_name)

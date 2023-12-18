@@ -13,7 +13,7 @@ VALID_TIME_SPANS = ["daily", "hourly", "weekly", "quarterly"]
 
 
 def _get_host(uri: str = "/api/v0"):
-    """ Parse the ipfs api host address from `IPFS_HOST` environment variable.
+    """Parse the ipfs api host address from `IPFS_HOST` environment variable.
     If not found, use localhost:5001/api/v0.
 
     Args:

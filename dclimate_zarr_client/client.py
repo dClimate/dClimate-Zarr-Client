@@ -124,40 +124,50 @@ def geo_temporal_query(
     point_limit: int = DEFAULT_POINT_LIMIT,
     output_format: str = "array",
 ) -> typing.Union[dict, bytes]:
-    """Filter an XArray dataset by specified spatial and/or temporal bounds and aggregate \
-        according to spatial and/or temporal logic, if desired.
-        Before aggregating check that the filtered data fits within specified point and area maximums \
-            to avoid computationally expensive retrieval and processing operations.
-        When bounds or aggregation logic are not provided, pass the dataset along untouched.
+    """Filter an XArray dataset
 
-        Return either a numpy array of data values or a NetCDF file.
+    Filter an XArray dataset by specified spatial and/or temporal bounds and aggregate
+    according to spatial and/or temporal logic, if desired. Before aggregating check
+    that the filtered data fits within specified point and area maximums to avoid
+    computationally expensive retrieval and processing operations. When bounds or
+    aggregation logic are not provided, pass the dataset along untouched.
 
-        Only one of point, circle, rectangle, or polygon kwargs may be provided
-        Only one of temporal or rolling aggregation kwargs may be provided, \
-            although they can be chained with spatial aggregations if desired.
+    Return either a numpy array of data values or a NetCDF file.
+
+    Only one of point, circle, rectangle, or polygon kwargs may be provided. Only one of
+    temporal or rolling aggregation kwargs may be provided, although they can be chained
+    with spatial aggregations if desired.
 
     Args:
         dataset_name (str): name used to link dataset to an ipns_name hash
         bucket_name (str): S3 bucket name where the datasets are going to be fetched
-        forecast_reference_time (str): Isoformatted string representing the desire date to return all available forecasts for
-        circle_kwargs (dict, optional): a dictionary of parameters relevant to a circular query
-        rectangle_kwargs (dict, optional): a dictionary of parameters relevant to a rectangular query
-        polygon_kwargs (dict, optional): a dictionary of parameters relevant to a polygonal query
-        spatial_agg_kwargs (dict, optional): a dictionary of parameters relevant to a spatial aggregation operation
-        temporal_agg_kwargs (dict, optional): a dictionary of parameters relevant to a temporal aggregation operation
-        rolling_agg_kwargs (dict, optional): a dictionary of parameters relevant to a rolling aggregation operation
+        forecast_reference_time (str): Isoformatted string representing the desire date
+            to return all available forecasts for
+        circle_kwargs (dict, optional): a dictionary of parameters relevant to a
+            circular query
+        rectangle_kwargs (dict, optional): a dictionary of parameters relevant to a
+            rectangular query
+        polygon_kwargs (dict, optional): a dictionary of parameters relevant to a
+            polygonal query
+        spatial_agg_kwargs (dict, optional): a dictionary of parameters relevant to a
+            spatial aggregation operation
+        temporal_agg_kwargs (dict, optional): a dictionary of parameters relevant to a
+            temporal aggregation operation
+        rolling_agg_kwargs (dict, optional): a dictionary of parameters relevant to a
+            rolling aggregation operation
         time_range (typing.Optional[typing.List[datetime.datetime]], optional):
             time range in which to subset data.
             Defaults to None.
         as_of (typing.Optional[datetime.datetime], optional):
-            pull in most recent data created before this time. If None, just get most recent.
-            Defaults to None.
-        area_limit (int, optional): maximum area in decimal degrees squared that a user may request.
-            Defaults to DEFAULT_AREA_LIMIT.
+            pull in most recent data created before this time. If None, just get most
+            recent. Defaults to None.
+        area_limit (int, optional): maximum area in decimal degrees squared that a user
+            may request. Defaults to DEFAULT_AREA_LIMIT.
         point_limit (int, optional): maximum number of data points user can fill.
             Defaults to DEFAULT_POINT_LIMIT.
-        output_format (str, optional): Current supported formats are `array` and `netcdf`.
-            Defaults to "array", which provides a numpy array of float32 values.
+        output_format (str, optional): Current supported formats are `array` and
+            `netcdf`. Defaults to "array", which provides a numpy array of float32
+            values.
 
     Returns:
         typing.Union[np.ndarray, bytes]: Output data as array (default) or NetCDF
@@ -180,26 +190,29 @@ def geo_temporal_query(
         > 1
     ):
         raise ConflictingGeoRequestError(
-            "User requested more than one type of geographic query, but only one can be submitted at a time"
+            "User requested more than one type of geographic query, but only one can "
+            "be submitted at a time"
         )
     if spatial_agg_kwargs and point_kwargs:
         raise ConflictingGeoRequestError(
-            "User requested spatial aggregation methods on a single point, \
-            but these are mutually exclusive parameters. Only one may be requested at a time."
+            "User requested spatial aggregation methods on a single point, "
+            "but these are mutually exclusive parameters. Only one may be requested at "
+            "a time."
         )
     if temporal_agg_kwargs and rolling_agg_kwargs:
         raise ConflictingAggregationRequestError(
-            "User requested both rolling and temporal aggregation, but these are mutually exclusive operations. \
-                Only one may be requested at a time."
+            "User requested both rolling and temporal aggregation, but these are "
+            "mutually exclusive operations. Only one may be requested at a time."
         )
     if output_format not in ["array", "netcdf"]:
         raise InvalidExportFormatError(
-            "User requested an invalid export format. Only 'array' or 'netcdf' permitted."
+            "User requested an invalid export format. Only 'array' or 'netcdf' "
+            "permitted."
         )
     # Set defaults to avoid Nones accidentally passed by users causing a TypeError
     if not point_limit:
         point_limit = DEFAULT_POINT_LIMIT
-    # Use the provided dataset string to find the dataset via IPNS\
+    # Use the provided dataset string to find the dataset via IPNS
     if source == "ipfs":
         ipns_name_hash = get_ipns_name_hash(dataset_name)
         ds = get_dataset_by_ipns_hash(ipns_name_hash, as_of=as_of)
@@ -207,13 +220,14 @@ def geo_temporal_query(
         ds = get_dataset_from_s3(dataset_name, bucket_name)
     else:
         raise ValueError("only possible sources are s3 and IPFS")
-    # Filter data down temporally, then spatially, and check that the size of resulting dataset fits within the limit.
-    # While a user can get the entire DS by providing no filters, \
-    # this will almost certainly cause the size checks to fail
+    # Filter data down temporally, then spatially, and check that the size of resulting
+    # dataset fits within the limit. While a user can get the entire DS by providing no
+    # filters, this will almost certainly cause the size checks to fail
     if "forecast_reference_time" in ds and not forecast_reference_time:
         raise InvalidForecastRequestError(
-            "Forecast dataset requested without forecast reference time. \
-             Provide a forecast reference time or request to a different dataset if you desire observations, not projections."
+            "Forecast dataset requested without forecast reference time. "
+            "Provide a forecast reference time or request to a different dataset if "
+            "you desire observations, not projections."
         )
     if forecast_reference_time:
         if "forecast_reference_time" in ds:
@@ -234,16 +248,18 @@ def geo_temporal_query(
         ds = get_points_in_polygons(ds, **polygon_kwargs, point_limit=point_limit)
     elif multiple_points_kwargs:
         ds = get_multiple_points(ds, **multiple_points_kwargs)
-    # Check that size of reduced data won't prove too expensive to request and process, according to specified limits
+    # Check that size of reduced data won't prove too expensive to request and process,
+    # according to specified limits
     check_dataset_size(ds, point_limit)
     check_has_data(ds)
     if forecast_reference_time:
         ds = reindex_forecast_dataset(ds)
     if multiple_points_kwargs:
-        # Aggregations pull whole dataset when ds is structured as multiple points. Forcing xarray to do subsetting
-        # before aggregation drastically speeds up agg
+        # Aggregations pull whole dataset when ds is structured as multiple points.
+        # Forcing xarray to do subsetting before aggregation drastically speeds up agg
         ds = ds.compute()
-    # Perform all requested valid aggregations. First aggregate data spatially, then temporally or on a rolling basis.
+    # Perform all requested valid aggregations. First aggregate data spatially, then
+    # temporally or on a rolling basis.
     if spatial_agg_kwargs:
         ds = spatial_aggregation(ds, **spatial_agg_kwargs)
     if temporal_agg_kwargs:
@@ -255,3 +271,6 @@ def geo_temporal_query(
         return _prepare_netcdf_bytes(ds)
     else:
         return _prepare_dict(ds)
+
+
+"""  """

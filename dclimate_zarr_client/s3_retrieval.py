@@ -3,11 +3,9 @@ import os
 from s3fs import S3FileSystem, S3Map
 import typing
 import json
-import numpy as np
 import xarray as xr
 
 from dclimate_zarr_client.dclimate_zarr_errors import DatasetNotFoundError
-
 
 
 def get_s3_fs() -> S3FileSystem:
@@ -17,7 +15,10 @@ def get_s3_fs() -> S3FileSystem:
         S3FileSystem:
     """
     if "AWS_ACCESS_KEY_ID" in os.environ and "AWS_SECRET_ACCESS_KEY" in os.environ:
-        return S3FileSystem(key=os.environ["AWS_ACCESS_KEY_ID"], secret=os.environ["AWS_SECRET_ACCESS_KEY"])
+        return S3FileSystem(
+            key=os.environ["AWS_ACCESS_KEY_ID"],
+            secret=os.environ["AWS_SECRET_ACCESS_KEY"],
+        )
     else:
         return S3FileSystem(anon=False)
 
@@ -33,7 +34,11 @@ def get_dataset_from_s3(dataset_name: str, bucket_name: str) -> xr.Dataset:
         xr.Dataset: dataset corresponding to key
     """
     try:
-        s3_map = S3Map(f"s3://{bucket_name}/datasets/{dataset_name}.zarr", s3=get_s3_fs(), check=True)
+        s3_map = S3Map(
+            f"s3://{bucket_name}/datasets/{dataset_name}.zarr",
+            s3=get_s3_fs(),
+            check=True,
+        )
         ds = xr.open_zarr(s3_map, chunks=None)
     except ValueError:
         raise DatasetNotFoundError("Invalid dataset name")

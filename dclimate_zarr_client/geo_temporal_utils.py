@@ -25,12 +25,14 @@ def check_dataset_size(ds: xr.Dataset, point_limit: int = DEFAULT_POINT_LIMIT):
 
     Args:
         ds (xr.Dataset): dataset to check size of
-        point_limit (int, optional): limit for dataset size. Defaults to DEFAULT_POINT_LIMIT.
+        point_limit (int, optional): limit for dataset size. Defaults to
+            DEFAULT_POINT_LIMIT.
 
     Raises:
         SelectionTooLargeError: Raised when dataset size limit is violated
     """
-    # Go through each of the dimensions and check whether they exist and if not set them to 1
+    # Go through each of the dimensions and check whether they exist and if not set them
+    # to 1
     dim_lengths = []
     for dim in ["latitude", "longitude", "time"]:
         try:
@@ -63,15 +65,21 @@ def check_has_data(ds: xr.Dataset):
 
 
 def _check_input_parameters(time_period=None, agg_method=None):
-    """Checks whether input parameters align with permitted time periods and aggregation methods
+    """Check input parameters
+
+    Checks whether input parameters align with permitted time periods and aggregation
+    methods.
 
     Args:
-        time_period (str, optional): a string specifying the time period to resample a dataset by
-        agg_method (str, optional): a string specifying the aggregation method to use on a dataset
+        time_period (str, optional): a string specifying the time period to resample a
+            dataset by
+        agg_method (str, optional): a string specifying the aggregation method to use on
+            a dataset
 
     Raises:
         InvalidTimePeriodError: Raised when the specified time period is not accepted
-        InvalidAggregationMethodError: Raised when the specified aggregation method is not accepted
+        InvalidAggregationMethodError: Raised when the specified aggregation method is
+            not accepted
     """
     if time_period and time_period not in [
         "hour",
@@ -83,35 +91,42 @@ def _check_input_parameters(time_period=None, agg_method=None):
         "all",
     ]:
         raise InvalidTimePeriodError(
-            f"Specified time period {time_period} not among permitted periods: \
-                'hour', 'day', 'week', 'month', 'quarter', 'year', 'all'"
+            f"Specified time period {time_period} not among permitted periods: "
+            "'hour', 'day', 'week', 'month', 'quarter', 'year', 'all'"
         )
     if agg_method and agg_method not in ["min", "max", "median", "mean", "std", "sum"]:
         raise InvalidAggregationMethodError(
-            f"Specified method {agg_method} not among permitted methods: \
-                'min', 'max', 'median', 'mean', 'std', 'sum'"
+            f"Specified method {agg_method} not among permitted methods: "
+            "'min', 'max', 'median', 'mean', 'std', 'sum'"
         )
 
-def get_forecast_dataset(ds: xr.Dataset, forecast_reference_time: datetime.datetime) -> xr.Dataset:
+
+def get_forecast_dataset(
+    ds: xr.Dataset, forecast_reference_time: datetime.datetime
+) -> xr.Dataset:
     """
     Filter a 4D forecast dataset to a 3D dataset ready for analysis
 
     Args:
-        xr.Dataset: 4D Xarray dataset containing time (forecast_reference_time) and forecast hour (step) dimensions
-        forecast_reference_time (str): Isoformatted string representing the desire date to return all available forecasts for
+        xr.Dataset: 4D Xarray dataset containing time (forecast_reference_time) and
+            forecast hour (step) dimensions
+        forecast_reference_time (str): Isoformatted string representing the desire date
+            to return all available forecasts for
 
     Returns:
         xr.Dataset: 3D Xarray dataset with forecast hour added to time dimension
     """
     # select only the requested date
     ds = ds.sel(forecast_reference_time=forecast_reference_time)
-    # Set time to equal the forecast time, not the forecast reference time. Assumes only one forecast reference time is returned
+    # Set time to equal the forecast time, not the forecast reference time. Assumes only
+    # one forecast reference time is returned
     ds = ds.assign_coords(step=ds.forecast_reference_time.values + ds.step.values)
     # Remove forecast reference hour
-    ds = ds.squeeze().drop('forecast_reference_time')
+    ds = ds.squeeze().drop_vars("forecast_reference_time")
     # Make forecasted data the time dimension
-    ds = ds.rename({"step" : "time"})
+    ds = ds.rename({"step": "time"})
     return ds
+
 
 def reindex_forecast_dataset(ds: xr.Dataset) -> xr.Dataset:
     """
@@ -123,15 +138,17 @@ def reindex_forecast_dataset(ds: xr.Dataset) -> xr.Dataset:
         xr.Dataset: 3D Xarray dataset with forecast hour added to time dimension
 
     Returns:
-        xr.Dataset: 3D Xarray dataset with the time dimension reindexed to include hours not forecasted
+        xr.Dataset: 3D Xarray dataset with the time dimension reindexed to include hours
+            not forecasted
     """
-    trange = pd.date_range(start=ds.time[0].values, end=ds.time[-1].values, freq='1H')
+    trange = pd.date_range(start=ds.time[0].values, end=ds.time[-1].values, freq="1H")
     return ds.reindex(time=trange)
+
 
 def get_single_point(
     ds: xr.Dataset, lat: float, lon: float, snap_to_grid: bool = True
 ) -> xr.Dataset:
-    """Gets a dataset corresponding to the full time series for a single point in a dataset
+    """Gets a dataset corresponding to the full time series for a single point
 
     Args:
         ds (xr.Dataset): dataset to subset
@@ -270,19 +287,23 @@ def get_points_in_polygons(
     epsg_crs: int = 4326,
     point_limit=DEFAULT_POINT_LIMIT,
 ) -> xr.Dataset:
-    """Subsets dataset to points within arbitrary shape. Requires rioxarray to be installed
+    """Subsets dataset to points within arbitrary shape.
+
+    Requires rioxarray to be installed
 
     Args:
         ds (xr.Dataset): dataset to subset
         polygons_mask (gpd.array.GeometryArray[shapely.geometry.multipolygon.MultiPolygon]):
             list (GeometryArray) of MultiPolygon shapes defining the area of interest
-        epsg_crs (int): epsg code for polygons_mask (see https://en.wikipedia.org/wiki/EPSG_Geodetic_Parameter_Dataset)
+        epsg_crs (int): epsg code for polygons_mask (see
+            https://en.wikipedia.org/wiki/EPSG_Geodetic_Parameter_Dataset)
 
     Returns:
         xr.Dataset: subsetted dataset
     """
-    # If the polygon(s) are collectively smaller than the size of one grid cell, clipping will return no data
-    # In this case return data from the grid cell nearest to the center of the polygon
+    # If the polygon(s) are collectively smaller than the size of one grid cell,
+    # clipping will return no data In this case return data from the grid cell nearest
+    # to the center of the polygon
     if ds.attrs["spatial resolution"] ** 2 > polygons_mask.unary_union().area:
         rep_point_ds = reduce_polygon_to_point(ds, polygons_mask)
         return rep_point_ds
@@ -307,7 +328,9 @@ def get_points_in_polygons(
 def get_data_in_time_range(
     ds: xr.Dataset, start_time: datetime.datetime, end_time: datetime.datetime
 ) -> xr.Dataset:
-    """Subset dataset to be within a contiguous time range. Can be combined with spatial subsetters defined above
+    """Subset dataset to be within a contiguous time range.
+
+    Can be combined with spatial subsetters defined above
 
     Args:
         ds (xr.Dataset): dataset to subset
@@ -326,9 +349,13 @@ def get_data_in_time_range(
 def reduce_polygon_to_point(
     ds: xr.Dataset, polygons_mask: gpd.array.GeometryArray
 ) -> xr.Dataset:
-    """Subsets data to a representative point approximately at the center of an arbitrary shape.
-        Returns data from the nearest grid cell to this pont.
-        NOTE a more involved alternative would be to return the average for values in the entire polygon at this point
+    """Subsets data to a representative point
+
+    Subsets data to a representative point approximately at the center of an arbitrary
+    shape.
+
+    Returns data from the nearest grid cell to this pont.
+    NOTE a more involved alternative would be to return the average for values in the entire polygon at this point
 
     Args:
         ds (xr.Dataset): dataset to subset
@@ -347,8 +374,13 @@ def spatial_aggregation(
     ds: xr.Dataset,
     agg_method: str,
 ) -> xr.Dataset:
-    """Subsets data for all points for every time period according to the specified aggregation method.
-       For a more nuanced treatment of spatial units use the `get_points_in_polygons` method.
+    """Subsets data using spatial aggregation
+
+    Subsets data for all points for every time period according to the specified
+    aggregation method.
+
+    For a more nuanced treatment of spatial units use the `get_points_in_polygons`
+    method.
 
     Args:
         ds (xr.Dataset): dataset to subset
@@ -370,18 +402,22 @@ def temporal_aggregation(
     agg_method: str,
     time_unit: int = 1,
 ) -> xr.Dataset:
-    """Subsets data according to a specified combination of time period, units of time, \
-        aggregation method, and/or desired spatial unit.
-       Time-based inputs defualt to the entire time range and 1 unit of time, respectively.
-       Spatial units default to points, i.e. every combination of latitudes/longitudes. The only alternative is "all".
-       For a more nuanced treatment of spatial units use the `get_points_in_polygons` method.
+    """Subsets data using temporatl aggregation.
+
+    Subsets data according to a specified combination of time period, units of time,
+    aggregation method, and/or desired spatial unit. Time-based inputs defualt to the
+    entire time range and 1 unit of time, respectively. Spatial units default to points,
+    i.e. every combination of latitudes/longitudes. The only alternative is "all". For a
+    more nuanced treatment of spatial units use the `get_points_in_polygons` method.
 
     Args:
         ds (xr.Dataset): dataset to subset
-        time_period (str): time period to aggregate by, parsed into DateOffset objects as per \
+        time_period (str): time period to aggregate by, parsed into DateOffset objects
+            as per
             https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects
         agg_method (str): method to aggregate by
-        time_unit (int): number of time periods to aggregate by. Default is 1. Ignored if "all" time periods specified.
+        time_unit (int): number of time periods to aggregate by. Default is 1. Ignored
+            if "all" time periods specified.
 
     Returns:
         xr.Dataset: subsetted dataset
@@ -409,9 +445,11 @@ def rolling_aggregation(
     window_size: int,
     agg_method: str,
 ) -> xr.Dataset:
-    """Subsets data to a rolling aggregate of data values along a dataset's "time" dimension.
-        The size of the window and the aggregation method are specified by the user.
-        Method must be one of "min", "max", "median", "mean", "std", or "sum".
+    """Subsets data using rolling aggregation.
+
+    Subsets data to a rolling aggregate of data values along a dataset's "time"
+    dimension. The size of the window and the aggregation method are specified by the
+    user. Method must be one of "min", "max", "median", "mean", "std", or "sum".
 
     Args:
         ds (xr.Dataset): dataset to subset
@@ -425,8 +463,8 @@ def rolling_aggregation(
     # Aggregate by the specified method over the specified rolling window length
     rolled = ds.rolling(time=window_size)
     aggregator = getattr(xr.core.rolling.DatasetRolling, agg_method)
-    rolled_agg = aggregator(rolled, keep_attrs=True).dropna(
-        "time"
-    )  # remove NAs at beginning/end of array where window size is not large enough to compute a value
+    rolled_agg = aggregator(rolled, keep_attrs=True).dropna("time")
+    # remove NAs at beginning/end of array where window size is not large enough to
+    # compute a value
 
     return rolled_agg
