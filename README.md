@@ -50,16 +50,25 @@ To install with extra packages for development and testing, run `pip install -e 
 code like:
 
 ```python
+# Singleton Function Interface
 from datetime import datetime
 import xarray as xr
-from dclimate_zarr_client.client import geo_temporal_query
+import dclimate_zarr_client as client
 ds_name = "era5_wind_100m_u-hourly"
-ds_bytes = geo_temporal_query(
+ds_bytes = client.geo_temporal_query(
     ds_name,
     point_kwargs={"lat": 40, "lon": -120},
     time_range=[datetime(2021, 1, 1), datetime(2022, 12, 31)],
     output_format="netcdf"
 )
+ds = xr.open_dataset(ds_bytes)
+
+# Pythonic Interface
+dataset = client.load_ipns(ds_name)
+dataset = dataset.point(lat=40, lon=-120)
+dataset = dataset.time_range(datetime(2021, 1, 1), datetime(2022, 12, 31))
+ds_bytes = dataset.to_netcdf()
+
 ds = xr.open_dataset(ds_bytes)
 ```
 ## Run tests for your local environment:
