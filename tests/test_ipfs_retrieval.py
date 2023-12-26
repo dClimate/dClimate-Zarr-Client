@@ -12,9 +12,7 @@ IPNS_NAME_HASH = "k2k4r8niyotlqqqvqoh7jr4gp6zp0b0975k88zmak151chv87w2p11qz"
 
 
 def patched_get_single_metadata(ipfs_hash):
-    with open(
-        pathlib.Path(__file__).parent / "etc" / "stac_metadata" / f"{ipfs_hash}.json"
-    ) as f:
+    with open(pathlib.Path(__file__).parent / "etc" / "stac_metadata" / f"{ipfs_hash}.json") as f:
         return json.load(f)
 
 
