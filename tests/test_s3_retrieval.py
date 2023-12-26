@@ -9,15 +9,11 @@ class TestS3Retrieval:
     @pytest.fixture
     def fake_s3fs(self, mocker):
         fake_s3fs = mocker.Mock()
-        mocker.patch(
-            "dclimate_zarr_client.s3_retrieval.get_s3_fs", return_value=fake_s3fs
-        )
+        mocker.patch("dclimate_zarr_client.s3_retrieval.get_s3_fs", return_value=fake_s3fs)
         return fake_s3fs
 
     class TestGetDataSetFromS3Function:
-        def test__given_a_dataset_name_and_bucket_name__it_fetch_the_dataset(
-            self, mocker, fake_s3fs
-        ):
+        def test__given_a_dataset_name_and_bucket_name__it_fetch_the_dataset(self, mocker, fake_s3fs):
             dataset_name = "copernicus_ocean_salinity_1p5_meters-daily"
             bucket_name = "zarr-prod"
             s3Map_mock = mocker.patch("dclimate_zarr_client.s3_retrieval.S3Map")
@@ -35,9 +31,7 @@ class TestS3Retrieval:
             )
 
     class TestListS3DatasetsFunction:
-        def test__given_a_bucket_name__then__returns_all_zarr_datasets(
-            self, mocker, fake_s3fs
-        ):
+        def test__given_a_bucket_name__then__returns_all_zarr_datasets(self, mocker, fake_s3fs):
             bucket_name = "zarr-prod"
             datasets = [
                 "zarr-dev/datasets/chirps_final_05-daily.zarr",
@@ -65,9 +59,7 @@ class TestS3Retrieval:
             ]
 
     class TestGetMetadataByS3Key:
-        def test__given_key_and_bucket_name__then__returns_metadata(
-            self, mocker, fake_s3fs
-        ):
+        def test__given_key_and_bucket_name__then__returns_metadata(self, mocker, fake_s3fs):
             bucket_name = "zarr-prod"
             key = "chirps_final_05-daily"
             zarr_metadata = json.dumps(

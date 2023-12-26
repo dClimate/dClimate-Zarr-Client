@@ -48,12 +48,8 @@ def get_dataset_from_s3(dataset_name: str, bucket_name: str) -> xr.Dataset:
         else:
             start, end = ds.attrs["date range"]
         if end is None:
-            raise DatasetNotFoundError(
-                "Dataset is undergoing initial parse, retry request later"
-            )
-        date_range = slice(
-            *[datetime.datetime.strptime(t, "%Y%m%d%H") for t in (start, end)]
-        )
+            raise DatasetNotFoundError("Dataset is undergoing initial parse, retry request later")
+        date_range = slice(*[datetime.datetime.strptime(t, "%Y%m%d%H") for t in (start, end)])
         if "time" in ds:
             ds = ds.sel(time=date_range)
         elif "forecast_reference_time" in ds:

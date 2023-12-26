@@ -178,9 +178,7 @@ def test_geo_temporal_query(polygons_mask, points_mask):
 
     for i, (lat, lon) in enumerate(points_arr["points"]):
         nc_vals = (
-            points_nc.where(
-                (points_nc.latitude == lat) & (points_nc.longitude == lon), drop=True
-            )
+            points_nc.where((points_nc.latitude == lat) & (points_nc.longitude == lon), drop=True)
             .u100.values.flatten()
             .tolist()
         )
@@ -218,9 +216,7 @@ def test_geo_conflicts():
             spatial_agg_kwargs={"agg_method": "std"},
         )
     assert multi_exc_info.match("User requested more than one type of geographic query")
-    assert single_exc_info.match(
-        "User requested spatial aggregation methods on a single point"
-    )
+    assert single_exc_info.match("User requested spatial aggregation methods on a single point")
 
 
 def test_geo_forecast_conflicts():
@@ -342,9 +338,7 @@ class TestClient:
                 dims="time",
                 coords={"time": np.arange(5)},
             )
-            lat = xr.DataArray(
-                np.arange(10, 50, 10), dims="lat", coords={"lat": np.arange(10, 50, 10)}
-            )
+            lat = xr.DataArray(np.arange(10, 50, 10), dims="lat", coords={"lat": np.arange(10, 50, 10)})
             lon = xr.DataArray(
                 np.arange(100, 140, 10),
                 dims="lon",
@@ -365,9 +359,7 @@ class TestClient:
             forecast_reference_time = xr.DataArray(
                 data=pd.date_range("2021-05-05", periods=1),
                 dims="forecast_reference_time",
-                coords={
-                    "forecast_reference_time": pd.date_range("2021-05-05", periods=1)
-                },
+                coords={"forecast_reference_time": pd.date_range("2021-05-05", periods=1)},
             )
             # we add one forecast 3 hours ahead to allow testing of infill behavior (via
             # reindex)
@@ -390,9 +382,7 @@ class TestClient:
                     )
                 },
             )
-            lat = xr.DataArray(
-                np.arange(10, 50, 10), dims="lat", coords={"lat": np.arange(10, 50, 10)}
-            )
+            lat = xr.DataArray(np.arange(10, 50, 10), dims="lat", coords={"lat": np.arange(10, 50, 10)})
             lon = xr.DataArray(
                 np.arange(100, 140, 10),
                 dims="lon",
@@ -408,9 +398,7 @@ class TestClient:
             fake_dataset = xr.Dataset({"data_var": data}, attrs=attrs)
             return fake_dataset
 
-        def test__given_bucket_and_dataset_names__then__fetch_geo_temporal_query_from_S3(
-            self, mocker, fake_dataset
-        ):
+        def test__given_bucket_and_dataset_names__then__fetch_geo_temporal_query_from_S3(self, mocker, fake_dataset):
             dataset_name = "copernicus_ocean_salinity_1p5_meters"
             bucket_name = ("zarr-prod",)
             get_dataset_from_s3_mock = mocker.patch(

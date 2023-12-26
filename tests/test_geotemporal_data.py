@@ -115,13 +115,9 @@ class TestGeotemporalData:
         end = datetime.datetime(2000, 1, 15)
         new_data = data.time_range(begin, end)
 
-        assert new_data.data["time"][0] == np.datetime64(
-            "2000-01-10T00:00:00.000000000"
-        )
+        assert new_data.data["time"][0] == np.datetime64("2000-01-10T00:00:00.000000000")
 
-        assert new_data.data["time"][-1] == np.datetime64(
-            "2000-01-15T00:00:00.000000000"
-        )
+        assert new_data.data["time"][-1] == np.datetime64("2000-01-15T00:00:00.000000000")
 
         assert data.data["time"][0] == np.datetime64("2000-01-01T00:00:00.000000000")
 
@@ -145,9 +141,7 @@ class TestGeotemporalData:
         data = GeotemporalData(forecast_ds)
         data = data.forecast("2021-05-05")
         data = data.reindex_forecast()
-        assert (
-            len(data.data.time) == 7
-        )  # tests that "missing" steps are successfully filled in by `reindex`
+        assert len(data.data.time) == 7  # tests that "missing" steps are successfully filled in by `reindex`
 
     @staticmethod
     def test_get_point_for_small_polygon(input_ds, undersized_polygons_mask):
@@ -170,13 +164,9 @@ class TestGeotemporalData:
         mean_vals = data.rolling_aggregation(5, "mean")
         max_vals = data.rolling_aggregation(5, "max")
         std_vals = data.rolling_aggregation(5, "std")
-        assert mean_vals.data["u100"].values[0][0][0] == pytest.approx(
-            7.912628173828125
-        )
+        assert mean_vals.data["u100"].values[0][0][0] == pytest.approx(7.912628173828125)
         assert max_vals.data["u100"].values[0][0][0] == pytest.approx(8.5950927734375)
-        assert std_vals.data["u100"].values[0][0][0] == pytest.approx(
-            0.5272848606109619
-        )
+        assert std_vals.data["u100"].values[0][0][0] == pytest.approx(0.5272848606109619)
 
     @staticmethod
     def test_temporal_aggregation(input_ds):
@@ -187,20 +177,12 @@ class TestGeotemporalData:
         data = GeotemporalData(input_ds)
 
         # [0][0][0] returns the first value for latitude 45.0, longitue -140.0
-        daily_maxs = data.temporal_aggregation(
-            time_period="day", agg_method="max", time_unit=2
-        )
-        monthly_means = data.temporal_aggregation(
-            time_period="month", agg_method="mean"
-        )
+        daily_maxs = data.temporal_aggregation(time_period="day", agg_method="max", time_unit=2)
+        monthly_means = data.temporal_aggregation(time_period="month", agg_method="mean")
         yearly_std = data.temporal_aggregation(time_period="year", agg_method="std")
         assert daily_maxs.data["u100"].values[0][0][0] == pytest.approx(8.5950927734375)
-        assert monthly_means.data["u100"].values[0][0][0] == pytest.approx(
-            -0.19848469, rel=1e-5
-        )
-        assert yearly_std.data["u100"].values[0][0][0] == pytest.approx(
-            6.490322113037109
-        )
+        assert monthly_means.data["u100"].values[0][0][0] == pytest.approx(-0.19848469, rel=1e-5)
+        assert yearly_std.data["u100"].values[0][0][0] == pytest.approx(6.490322113037109)
 
     @staticmethod
     def test_spatial_aggregation(input_ds):
@@ -211,9 +193,5 @@ class TestGeotemporalData:
         data = GeotemporalData(input_ds)
         mean_vals_all_pts = data.spatial_aggregation("mean")
         min_val_rep_pt = data.spatial_aggregation("min")
-        assert float(mean_vals_all_pts.data["u100"].values[0]) == pytest.approx(
-            1.5880329608917236
-        )
-        assert float(min_val_rep_pt.data["u100"].values[0]) == pytest.approx(
-            -9.5386962890625
-        )
+        assert float(mean_vals_all_pts.data["u100"].values[0]) == pytest.approx(1.5880329608917236)
+        assert float(min_val_rep_pt.data["u100"].values[0]) == pytest.approx(-9.5386962890625)
