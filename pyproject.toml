@@ -10,8 +10,54 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dclimate_zarr_client"
 dynamic = ["version"]
+authors = [
+    { name = "Evan Schechter", email = "evan@arbol.io" },
+    { name = "Chris Rossi", email = "chris@christophermrossi.com" },
+    { name = "Robert Banick", email = "robert.banick@arbol.io" },
+]
+requires-python = ">=3.10"
+dependencies = [
+    "xarray",
+    "rioxarray",
+    "zarr",
+    "numpy",
+    "ipldstore @ git+https://github.com/dClimate/ipldstore@main",
+    "requests",
+    "geopandas",
+    "s3fs",
+    "scipy",
+]
+
+[project.urls]
+Homepage = "https://arbol.io/"
+
+[tool.black]
+line-length = 119
+
+[project.optional-dependencies]
+testing = [
+    "pytest",
+    "pytest-cov",
+    "pytest-mock",
+]
+dev = [
+    "black",
+    "flake8",
+    "flake8-pyproject",
+    "nox"
+]
+
+[tool.setuptools]
+include-package-data = false
 
 [tool.setuptools_scm]
 version_scheme = "post-release"
 local_scheme = "no-local-version"
 write_to = "_version.py"
+
+[tool.setuptools.package-data]
+"*" = ["py.typed", "*.json"]
+
+[tool.setuptools.packages.find]
+exclude = ["tests"]
+namespaces = false
