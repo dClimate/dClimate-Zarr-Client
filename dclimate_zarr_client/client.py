@@ -5,12 +5,10 @@ Functions that will map to endpoints in the flask app
 import datetime
 import typing
 
-from xarray.core.variable import MissingDimensionsError
 from .dclimate_zarr_errors import (
     ConflictingGeoRequestError,
     ConflictingAggregationRequestError,
     InvalidExportFormatError,
-    InvalidForecastRequestError,
 )
 from .geotemporal_data import GeotemporalData, DEFAULT_POINT_LIMIT
 from .ipfs_retrieval import get_dataset_by_ipns_hash, get_ipns_name_hash
