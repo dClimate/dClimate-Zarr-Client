@@ -597,7 +597,9 @@ class GeotemporalData:
                 data = data.forecast(forecast_reference_time)
                 data = data.reindex_forecast()
             else:
-                raise MissingDimensionsError(f"Forecasts are not available for the requested dataset {data.dataset_name}")
+                raise MissingDimensionsError(
+                    f"Forecasts are not available for the requested dataset {data.dataset_name}"
+                )
 
         # Perform all requested valid aggregations. First aggregate data spatially, then
         # temporally or on a rolling basis.
