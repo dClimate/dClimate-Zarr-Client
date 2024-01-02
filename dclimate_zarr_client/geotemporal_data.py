@@ -581,6 +581,7 @@ class GeotemporalData:
         data.check_dataset_size(point_limit)
         data.check_has_data()
         if forecast_reference_time:
+            data = data.forecast(forecast_reference_time)
             data = data.reindex_forecast()
 
         # Perform all requested valid aggregations. First aggregate data spatially, then
