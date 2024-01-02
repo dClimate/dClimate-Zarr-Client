@@ -179,6 +179,7 @@ def geo_temporal_query(
     # filters, this will almost certainly cause the size checks to fail
 
     data = data.query(
+        dataset_name=dataset_name,
         forecast_reference_time=forecast_reference_time,
         point_kwargs=point_kwargs,
         circle_kwargs=circle_kwargs,

@@ -548,6 +548,7 @@ class GeotemporalData:
 
     def query(
         self,
+        dataset_name: str = None,
         forecast_reference_time: str = None,
         point_kwargs: dict = None,
         circle_kwargs: dict = None,
@@ -596,7 +597,7 @@ class GeotemporalData:
                 data = data.forecast(forecast_reference_time)
                 data = data.reindex_forecast()
             else:
-                raise MissingDimensionsError(f"Forecasts are not available for the requested dataset {data}")
+                raise MissingDimensionsError(f"Forecasts are not available for the requested dataset {dataset_name}")
 
         # Perform all requested valid aggregations. First aggregate data spatially, then
         # temporally or on a rolling basis.
