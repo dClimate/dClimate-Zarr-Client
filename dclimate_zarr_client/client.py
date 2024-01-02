@@ -5,12 +5,10 @@ Functions that will map to endpoints in the flask app
 import datetime
 import typing
 
-from xarray.core.variable import MissingDimensionsError
 from .dclimate_zarr_errors import (
     ConflictingGeoRequestError,
     ConflictingAggregationRequestError,
     InvalidExportFormatError,
-    InvalidForecastRequestError,
 )
 from .geotemporal_data import GeotemporalData, DEFAULT_POINT_LIMIT
 from .ipfs_retrieval import get_dataset_by_ipns_hash, get_ipns_name_hash
@@ -179,19 +177,9 @@ def geo_temporal_query(
     # Filter data down temporally, then spatially, and check that the size of resulting
     # dataset fits within the limit. While a user can get the entire DS by providing no
     # filters, this will almost certainly cause the size checks to fail
-    if "forecast_reference_time" in data.data and not forecast_reference_time:
-        raise InvalidForecastRequestError(
-            "Forecast dataset requested without forecast reference time. "
-            "Provide a forecast reference time or request to a different dataset if "
-            "you desire observations, not projections."
-        )
-    if forecast_reference_time:
-        if "forecast_reference_time" in data.data:
-            data = data.forecast(forecast_reference_time)
-        else:
-            raise MissingDimensionsError(f"Forecasts are not available for the requested dataset {dataset_name}")
 
     data = data.query(
+        dataset_name=dataset_name,
         forecast_reference_time=forecast_reference_time,
         point_kwargs=point_kwargs,
         circle_kwargs=circle_kwargs,

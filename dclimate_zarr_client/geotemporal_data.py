@@ -8,7 +8,11 @@ import pandas as pd
 import numpy as np
 from shapely.ops import unary_union
 import xarray as xr
+from xarray.core.variable import MissingDimensionsError
 
+from .dclimate_zarr_errors import (
+    InvalidForecastRequestError,
+)
 from . import dclimate_zarr_errors as errors
 
 # Users should not select more than this number of data points and coordinates
@@ -544,6 +548,7 @@ class GeotemporalData:
 
     def query(
         self,
+        dataset_name: str = None,
         forecast_reference_time: str = None,
         point_kwargs: dict = None,
         circle_kwargs: dict = None,
@@ -580,8 +585,19 @@ class GeotemporalData:
         # process, according to specified limits
         data.check_dataset_size(point_limit)
         data.check_has_data()
+
+        if "forecast_reference_time" in data.data and not forecast_reference_time:
+            raise InvalidForecastRequestError(
+                "Forecast dataset requested without forecast reference time. "
+                "Provide a forecast reference time or request to a different dataset if "
+                "you desire observations, not projections."
+            )
         if forecast_reference_time:
-            data = data.reindex_forecast()
+            if "forecast_reference_time" in data.data:
+                data = data.forecast(forecast_reference_time)
+                data = data.reindex_forecast()
+            else:
+                raise MissingDimensionsError(f"Forecasts are not available for the requested dataset {dataset_name}")
 
         # Perform all requested valid aggregations. First aggregate data spatially, then
         # temporally or on a rolling basis.
