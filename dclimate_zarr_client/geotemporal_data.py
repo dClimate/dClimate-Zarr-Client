@@ -31,7 +31,7 @@ class GeotemporalData:
         data variable.
     """
 
-    def __init__(self, data: xr.Dataset, dataset_name: str = None, data_var: str = None):
+    def __init__(self, data: xr.Dataset, dataset_name: str, data_var: str = None):
         self.data = data
         self.dataset_name = dataset_name
         self._data_var = data_var
@@ -63,7 +63,7 @@ class GeotemporalData:
         if data_var not in self.data.data_vars:
             raise KeyError(data_var)
 
-        return type(self)(self.data, data_var)
+        return type(self)(self.data, dataset_name=self.dataset_name, data_var=data_var)
 
     @property
     def data_var(self) -> xr.DataArray:
@@ -611,7 +611,7 @@ class GeotemporalData:
         return data
 
     def _new(self, data):
-        return type(self)(data, self._data_var)
+        return type(self)(data, dataset_name=self.dataset_name, data_var=self._data_var)
 
 
 def _haversine(
