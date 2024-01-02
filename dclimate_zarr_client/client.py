@@ -179,17 +179,6 @@ def geo_temporal_query(
     # Filter data down temporally, then spatially, and check that the size of resulting
     # dataset fits within the limit. While a user can get the entire DS by providing no
     # filters, this will almost certainly cause the size checks to fail
-    if "forecast_reference_time" in data.data and not forecast_reference_time:
-        raise InvalidForecastRequestError(
-            "Forecast dataset requested without forecast reference time. "
-            "Provide a forecast reference time or request to a different dataset if "
-            "you desire observations, not projections."
-        )
-    if forecast_reference_time:
-        if "forecast_reference_time" in data.data:
-            data = data.forecast(forecast_reference_time)
-        else:
-            raise MissingDimensionsError(f"Forecasts are not available for the requested dataset {dataset_name}")
 
     data = data.query(
         forecast_reference_time=forecast_reference_time,

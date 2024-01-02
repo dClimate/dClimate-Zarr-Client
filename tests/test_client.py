@@ -427,10 +427,6 @@ class TestClient:
                 "dclimate_zarr_client.client.get_dataset_from_s3",
                 return_value=fake_forecast_dataset,
             )
-            # mocker.patch(
-            #     "dclimate_zarr_client.client._prepare_dict",
-            #     return_value=fake_forecast_dataset,
-            # )
 
             client.geo_temporal_query(
                 dataset_name=dataset_name,
