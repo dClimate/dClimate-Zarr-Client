@@ -31,8 +31,9 @@ class GeotemporalData:
         data variable.
     """
 
-    def __init__(self, data: xr.Dataset, data_var: str = None):
+    def __init__(self, data: xr.Dataset, dataset_name: str = None, data_var: str = None):
         self.data = data
+        self.dataset_name = dataset_name
         self._data_var = data_var
 
     def use(self, data_var: str) -> "GeotemporalData":
@@ -548,7 +549,6 @@ class GeotemporalData:
 
     def query(
         self,
-        dataset_name: str = None,
         forecast_reference_time: str = None,
         point_kwargs: dict = None,
         circle_kwargs: dict = None,
@@ -597,7 +597,7 @@ class GeotemporalData:
                 data = data.forecast(forecast_reference_time)
                 data = data.reindex_forecast()
             else:
-                raise MissingDimensionsError(f"Forecasts are not available for the requested dataset {dataset_name}")
+                raise MissingDimensionsError(f"Forecasts are not available for the requested dataset {data.dataset_name}")
 
         # Perform all requested valid aggregations. First aggregate data spatially, then
         # temporally or on a rolling basis.

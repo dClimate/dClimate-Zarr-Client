@@ -33,7 +33,7 @@ def load_ipns(
     """
     ipns_name_hash = get_ipns_name_hash(dataset_name)
     ds = get_dataset_by_ipns_hash(ipns_name_hash, as_of=as_of)
-    return GeotemporalData(ds)
+    return GeotemporalData(ds, dataset_name=dataset_name)
 
 
 def load_s3(
@@ -52,7 +52,7 @@ def load_s3(
         S3 bucket name where the dataset is going to be fetched
     """
     ds = get_dataset_from_s3(dataset_name, bucket_name)
-    return GeotemporalData(ds)
+    return GeotemporalData(ds, dataset_name=dataset_name)
 
 
 def geo_temporal_query(
@@ -179,7 +179,6 @@ def geo_temporal_query(
     # filters, this will almost certainly cause the size checks to fail
 
     data = data.query(
-        dataset_name=dataset_name,
         forecast_reference_time=forecast_reference_time,
         point_kwargs=point_kwargs,
         circle_kwargs=circle_kwargs,
