@@ -135,8 +135,8 @@ class GeotemporalData:
         """
         # select only the requested date
         data = self.data.sel(forecast_reference_time=forecast_reference_time)
-        # Set time to equal the forecast time, not the forecast reference time. Assumes only
-        # one forecast reference time is returned
+        # Set time to equal the forecast time, not the forecast reference time.
+        # Assumes only one forecast reference time is returned
         data = data.assign_coords(step=data.forecast_reference_time.values + data.step.values)
         # Remove forecast reference hour
         data = data.squeeze().drop_vars("forecast_reference_time")
@@ -581,11 +581,7 @@ class GeotemporalData:
         elif multiple_points_kwargs:
             data = data.points(**multiple_points_kwargs)
 
-        # Check that size of reduced data won't prove too expensive to request and
-        # process, according to specified limits
-        data.check_dataset_size(point_limit)
-        data.check_has_data()
-
+        # Filter down forecast data and fill in any missing forecast dates
         if "forecast_reference_time" in data.data and not forecast_reference_time:
             raise InvalidForecastRequestError(
                 "Forecast dataset requested without forecast reference time. "
@@ -600,6 +596,11 @@ class GeotemporalData:
                 raise MissingDimensionsError(
                     f"Forecasts are not available for the requested dataset {data.dataset_name}"
                 )
+
+        # Check that size of reduced data won't prove too expensive to request and
+        # process, according to specified limits
+        data.check_dataset_size(point_limit)
+        data.check_has_data()
 
         # Perform all requested valid aggregations. First aggregate data spatially, then
         # temporally or on a rolling basis.
