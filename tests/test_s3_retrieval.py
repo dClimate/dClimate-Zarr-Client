@@ -34,7 +34,9 @@ class TestS3Retrieval:
             mock_dataset = namedtuple("Dataset", ["update_in_progress", "initial_parse"])(True, True)
             mocker.patch("xarray.open_zarr", return_value=mock_dataset)
 
-            with pytest.raises(DatasetNotFoundError, match="Dataset is undergoing initial parse, retry request later"):
+            with pytest.raises(
+                DatasetNotFoundError, match="Dataset fake-dataset is undergoing initial parse, retry request later"
+            ):
                 s3_retrieval.get_dataset_from_s3("fake-dataset", "zarr-prod")
 
     class TestListS3DatasetsFunction:
