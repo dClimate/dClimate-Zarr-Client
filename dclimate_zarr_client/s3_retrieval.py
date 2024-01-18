@@ -37,18 +37,18 @@ def get_dataset_from_s3(dataset_name: str, bucket_name: str) -> xr.Dataset:
         s3_map = S3Map(
             f"s3://{bucket_name}/datasets/{dataset_name}.zarr",
             s3=get_s3_fs(),
-            check=True,
         )
         ds = xr.open_zarr(s3_map, chunks=None)
-    except ValueError:
-        raise DatasetNotFoundError("Invalid dataset name")
+    except FileNotFoundError:
+        raise DatasetNotFoundError(f"Invalid dataset name {dataset_name}")
+
     if ds.update_in_progress:
+        if hasattr(ds, "initial_parse") and ds.initial_parse:
+            raise DatasetNotFoundError(f"Dataset {dataset_name} is undergoing initial parse, retry request later")
         if ds.update_is_append_only:
             start, end = ds.attrs["date range"][0], ds.attrs["update_previous_end_date"]
         else:
             start, end = ds.attrs["date range"]
-        if end is None:
-            raise DatasetNotFoundError("Dataset is undergoing initial parse, retry request later")
         date_range = slice(*[datetime.datetime.strptime(t, "%Y%m%d%H") for t in (start, end)])
         if "time" in ds:
             ds = ds.sel(time=date_range)
