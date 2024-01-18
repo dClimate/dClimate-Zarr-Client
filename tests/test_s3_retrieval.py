@@ -1,6 +1,7 @@
 import pytest
 
 import dclimate_zarr_client.s3_retrieval as s3_retrieval
+from dclimate_zarr_client.dclimate_zarr_errors import DatasetNotFoundError
 import json
 from collections import namedtuple
 
@@ -27,8 +28,14 @@ class TestS3Retrieval:
             s3Map_mock.assert_called_with(
                 f"s3://{bucket_name}/datasets/{dataset_name}.zarr",
                 s3=fake_s3fs,
-                check=True,
             )
+
+        def test__given_a_dataset_with_initial_parse_true__it_raises_error(self, mocker):
+            mock_dataset = namedtuple("Dataset", ["update_in_progress", "initial_parse"])(True, True)
+            mocker.patch("xarray.open_zarr", return_value=mock_dataset)
+
+            with pytest.raises(DatasetNotFoundError, match="Dataset is undergoing initial parse, retry request later"):
+                s3_retrieval.get_dataset_from_s3("fake-dataset", "zarr-prod")
 
     class TestListS3DatasetsFunction:
         def test__given_a_bucket_name__then__returns_all_zarr_datasets(self, mocker, fake_s3fs):
