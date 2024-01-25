@@ -549,7 +549,7 @@ class GeotemporalData:
 
     def query(
         self,
-        forecast_reference_time: str = None,
+        forecast_reference_time: datetime.datetime = None,
         point_kwargs: dict = None,
         circle_kwargs: dict = None,
         rectangle_kwargs: dict = None,
