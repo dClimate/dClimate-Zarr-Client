@@ -22,8 +22,8 @@ from xarray.core.variable import MissingDimensionsError
 SAMPLE_ZARRS = pathlib.Path(__file__).parent / "etc" / "sample_zarrs"
 
 
-@unittest.mock.patch("dclimate_zarr_client.client.get_dataset_by_ipns_hash")
-@unittest.mock.patch("dclimate_zarr_client.client.get_ipns_name_hash")
+@unittest.mock.patch("dclimate_zarr_client.ipfs_retrieval.get_dataset_by_ipns_hash")
+@unittest.mock.patch("dclimate_zarr_client.ipfs_retrieval.get_ipns_name_hash")
 def test_load_ipns(get_ipns_hash, get_dataset_by_ipns_hash, dataset):
     get_ipns_hash.return_value = "thehash"
     get_dataset_by_ipns_hash.return_value = dataset
@@ -35,8 +35,8 @@ def test_load_ipns(get_ipns_hash, get_dataset_by_ipns_hash, dataset):
     get_dataset_by_ipns_hash.assert_called_once_with("thehash", as_of=None)
 
 
-@unittest.mock.patch("dclimate_zarr_client.client.get_dataset_by_ipns_hash")
-@unittest.mock.patch("dclimate_zarr_client.client.get_ipns_name_hash")
+@unittest.mock.patch("dclimate_zarr_client.ipfs_retrieval.get_dataset_by_ipns_hash")
+@unittest.mock.patch("dclimate_zarr_client.ipfs_retrieval.get_ipns_name_hash")
 def test_load_ipns_with_as_of(get_ipns_hash, get_dataset_by_ipns_hash, dataset):
     get_ipns_hash.return_value = "thehash"
     get_dataset_by_ipns_hash.return_value = dataset
@@ -95,11 +95,11 @@ def patch_ipns_s3(module_mocker):
     Patch IPNS dataset retrieval functions in this test
     """
     module_mocker.patch(
-        "dclimate_zarr_client.client.get_ipns_name_hash",
+        "dclimate_zarr_client.ipfs_retrieval.get_ipns_name_hash",
         patched_get_ipns_name_hash,
     )
     module_mocker.patch(
-        "dclimate_zarr_client.client.get_dataset_by_ipns_hash",
+        "dclimate_zarr_client.ipfs_retrieval.get_dataset_by_ipns_hash",
         patched_get_dataset_by_ipns_hash,
     )
     module_mocker.patch(

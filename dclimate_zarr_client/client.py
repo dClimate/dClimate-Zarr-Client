@@ -11,7 +11,6 @@ from .dclimate_zarr_errors import (
     InvalidExportFormatError,
 )
 from .geotemporal_data import GeotemporalData, DEFAULT_POINT_LIMIT
-from .ipfs_retrieval import get_dataset_by_ipns_hash, get_ipns_name_hash
 from .s3_retrieval import get_dataset_from_s3
 
 
@@ -20,7 +19,7 @@ def load_ipns(
     as_of: typing.Optional[datetime.datetime] = None,
 ) -> GeotemporalData:
     """
-    Load a Geotemporal dataset from IPLD.
+    Load a Geotemporal dataset from IPLD. Only valid for Python versions >= 3.10
 
     Parameters
     ----------
@@ -31,6 +30,8 @@ def load_ipns(
         Pull in most recent data created before this time. If ``None``, just get most
         recent. Defaults to ``None``.
     """
+    from .ipfs_retrieval import get_dataset_by_ipns_hash, get_ipns_name_hash
+
     ipns_name_hash = get_ipns_name_hash(dataset_name)
     ds = get_dataset_by_ipns_hash(ipns_name_hash, as_of=as_of)
     return GeotemporalData(ds, dataset_name=dataset_name)
@@ -57,7 +58,7 @@ def load_s3(
 
 def geo_temporal_query(
     dataset_name: str,
-    source: str = "ipfs",
+    source: typing.Literal["ipfs", "s3"] = "ipfs",
     bucket_name: str = None,
     var_name: str = None,
     forecast_reference_time: str = None,
@@ -90,6 +91,8 @@ def geo_temporal_query(
 
     Args:
         dataset_name (str): name used to link dataset to an ipns_name hash
+        source: (typing.Literal["ipfs", "s3"]): how to pull data.
+            Defaults to "ipfs", but "ipfs" is only valid for Python versions >= 3.10
         bucket_name (str): S3 bucket name where the datasets are going to be fetched
         forecast_reference_time (str): Isoformatted string representing the desire date
             to return all available forecasts for
