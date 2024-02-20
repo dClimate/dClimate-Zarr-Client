@@ -100,7 +100,7 @@ class GeotemporalData:
         SelectionTooLargeError
             When dataset size limit is violated
         """
-        num_points = functools.reduce(operator.mul, self.data.dims.values())
+        num_points = functools.reduce(operator.mul, self.data.sizes.values())
         if num_points > point_limit:
             raise errors.SelectionTooLargeError(
                 f"Selection of {num_points} data points is more than limit of {point_limit}"
@@ -157,7 +157,7 @@ class GeotemporalData:
             xr.Dataset: 3D Xarray dataset with the time dimension reindexed to include hours
                 not forecasted
         """
-        trange = pd.date_range(start=self.data.time[0].values, end=self.data.time[-1].values, freq="1H")
+        trange = pd.date_range(start=self.data.time[0].values, end=self.data.time[-1].values, freq="1h")
         return self._new(self.data.reindex(time=trange))
 
     def point(self, lat: float, lon: float, snap_to_grid: bool = True) -> "GeotemporalData":
@@ -432,12 +432,12 @@ class GeotemporalData:
         """
         _check_input_parameters(time_period=time_period, agg_method=agg_method)
         period_strings = {
-            "hour": f"{time_unit}H",
+            "hour": f"{time_unit}h",
             "day": f"{time_unit}D",
             "week": f"{time_unit}W",
-            "month": f"{time_unit}M",
+            "month": f"{time_unit}ME",
             "quarter": f"{time_unit}Q",
-            "year": f"{time_unit}Y",
+            "year": f"{time_unit}YE",
             "all": f"{len(set(self.data.time.dt.year.values))}Y",
         }
         # Resample by the specified time period and aggregate by the specified method
@@ -645,7 +645,9 @@ def _haversine(
     dlon = lon2 - lon1
     dlat = lat2 - lat1
     a = np.sin(dlat / 2) ** 2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon / 2) ** 2
-    c = 2 * np.arcsin(np.sqrt(a))
+    # this formula sometimes produces negative values for very small distances, so we take abs
+    abs_a = abs(a)
+    c = 2 * np.arcsin(np.sqrt(abs_a))
 
     # radius of earth in km
     r = 6371

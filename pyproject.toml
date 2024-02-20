@@ -23,6 +23,7 @@ dependencies = [
     "numpy",
     "ipldstore @ git+https://github.com/dClimate/ipldstore@main",
     "requests",
+    "pyarrow",
     "geopandas",
     "s3fs",
     "scipy",
