@@ -1,3 +1,4 @@
+from aiobotocore import session
 import datetime
 import os
 from s3fs import S3FileSystem, S3Map
@@ -14,7 +15,9 @@ def get_s3_fs() -> S3FileSystem:
     Returns:
         S3FileSystem:
     """
-    if "AWS_ACCESS_KEY_ID" in os.environ and "AWS_SECRET_ACCESS_KEY" in os.environ:
+    if "ZARR_AWS_PROFILE_NAME" in os.environ:
+        return S3FileSystem(session=session.AioSession(profile=os.environ["ZARR_AWS_PROFILE_NAME"]))
+    elif "AWS_ACCESS_KEY_ID" in os.environ and "AWS_SECRET_ACCESS_KEY" in os.environ:
         return S3FileSystem(
             key=os.environ["AWS_ACCESS_KEY_ID"],
             secret=os.environ["AWS_SECRET_ACCESS_KEY"],
