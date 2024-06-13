@@ -17,6 +17,7 @@ authors = [
 ]
 requires-python = ">=3.9"
 dependencies = [
+    "aiobotocore",
     "xarray",
     "rioxarray",
     "zarr",
@@ -25,12 +26,14 @@ dependencies = [
     "requests",
     "pyarrow",
     "geopandas",
+    "pandas",
     "s3fs",
+    "shapely",
     "scipy",
 ]
 
 [project.urls]
-Homepage = "https://www.dclimate.net"
+Homepage = "https://dclimate.net/"
 
 [tool.black]
 line-length = 119

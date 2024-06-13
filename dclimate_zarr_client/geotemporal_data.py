@@ -431,19 +431,22 @@ class GeotemporalData:
             A new dataset
         """
         _check_input_parameters(time_period=time_period, agg_method=agg_method)
-        period_strings = {
-            "hour": f"{time_unit}h",
-            "day": f"{time_unit}D",
-            "week": f"{time_unit}W",
-            "month": f"{time_unit}ME",
-            "quarter": f"{time_unit}Q",
-            "year": f"{time_unit}YE",
-            "all": f"{len(set(self.data.time.dt.year.values))}Y",
-        }
-        # Resample by the specified time period and aggregate by the specified method
-        resampled = self.data.resample(time=period_strings[time_period])
-        aggregator = getattr(xr.core.resample.DatasetResample, agg_method)
-        resampled_agg = aggregator(resampled, keep_attrs=True)
+        if time_period == "all":
+            aggregator = getattr(xr.Dataset, agg_method)
+            resampled_agg = aggregator(self.data, dim="time", keep_attrs=True)
+        else:
+            period_strings = {
+                "hour": f"{time_unit}h",
+                "day": f"{time_unit}D",
+                "week": f"{time_unit}W",
+                "month": f"{time_unit}ME",
+                "quarter": f"{time_unit}Q",
+                "year": f"{time_unit}YE",
+            }
+            # Resample by the specified time period and aggregate by the specified method
+            resampled = self.data.resample(time=period_strings[time_period])
+            aggregator = getattr(xr.core.resample.DatasetResample, agg_method)
+            resampled_agg = aggregator(resampled, keep_attrs=True)
 
         return self._new(resampled_agg)
 

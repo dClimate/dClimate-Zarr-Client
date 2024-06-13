@@ -3,6 +3,7 @@ import pytest
 import dclimate_zarr_client.s3_retrieval as s3_retrieval
 from dclimate_zarr_client.dclimate_zarr_errors import DatasetNotFoundError
 import json
+import os
 from collections import namedtuple
 
 
@@ -83,3 +84,10 @@ class TestS3Retrieval:
             metadata = s3_retrieval.get_metadata_by_s3_key(key, bucket_name)
 
             assert metadata == json.loads(zarr_metadata)
+
+
+def test_identical_s3fs_instance_used_when_profile_set():
+    os.environ["ZARR_AWS_PROFILE_NAME"] = "test"
+    s3fs = s3_retrieval.get_s3_fs()
+    s3fs2 = s3_retrieval.get_s3_fs()
+    assert s3fs == s3fs2

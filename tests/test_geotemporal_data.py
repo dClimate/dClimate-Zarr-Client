@@ -192,9 +192,11 @@ class TestGeotemporalData:
         daily_maxs = data.temporal_aggregation(time_period="day", agg_method="max", time_unit=2)
         monthly_means = data.temporal_aggregation(time_period="month", agg_method="mean")
         yearly_std = data.temporal_aggregation(time_period="year", agg_method="std")
+        all_sum = data.temporal_aggregation(time_period="all", agg_method="sum")
         assert daily_maxs.data["u100"].values[0][0][0] == pytest.approx(8.5950927734375)
         assert monthly_means.data["u100"].values[0][0][0] == pytest.approx(-0.19848469, rel=1e-5)
         assert yearly_std.data["u100"].values[0][0][0] == pytest.approx(6.490322113037109)
+        assert all_sum.data["u100"].values[0][0] == pytest.approx(-33.345367)
 
     @staticmethod
     def test_spatial_aggregation(input_ds):
