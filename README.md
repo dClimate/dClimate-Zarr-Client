@@ -1,6 +1,5 @@
 # dClimate-Zarr-Client
-Retrieve zarrs stored on IPLD. Currently, primary use is to handle ipfs / geographic operations
-for use in a [Flask API](https://github.com/dClimate/dClimate-Zarr-API).
+Retrieve zarrs stored on IPLD.
 
 Uses [ipldstore](https://github.com/dClimate/ipldstore) to actually access zarrs, then provides
 filtering and aggregation functionality to these zarrs using `xarray` native methods wherever possible.
@@ -85,6 +84,6 @@ nox
 ## Environment requirements:
 
 - Running IPFS daemon
-- Dataset parsed with `climate_ipfs` branch `zarr-main` with name `ds_name`
+- Dataset parsed with [gridded-etl-tools](https://github.com/Arbol-Project/gridded-etl-tools/) with name `ds_name`
 - Up-to-date IPNS table (IPNS key for `ds_name` can't be expired).
-  If `ipfs name resolve <ipns key>` stalls out, the IPNS key is expired and ETL must be rerun.
+  If `ipfs name resolve <ipns key>` stalls out, the IPNS key is expired and `publish_metadata` step of ETL must be rerun.
