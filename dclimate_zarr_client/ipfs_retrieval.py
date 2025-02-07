@@ -4,7 +4,7 @@ import os
 
 import requests
 import xarray as xr
-from ipldstore import get_ipfs_mapper
+from py_hamt import HAMT, IPFSStore
 
 from .dclimate_zarr_errors import DatasetNotFoundError, NoMetadataFoundError
 
@@ -127,9 +127,8 @@ def get_dataset_by_ipfs_hash(ipfs_hash: str) -> xr.Dataset:
     Returns:
         xr.Dataset: dataset corresponding to hash
     """
-    ipfs_mapper = get_ipfs_mapper(host=_get_host(uri=""))
-    ipfs_mapper.set_root(ipfs_hash)
-    return xr.open_zarr(ipfs_mapper, chunks=None)
+    hamt_store = HAMT(store=IPFSStore(), root_node_id=ipfs_hash, read_only=True)
+    return xr.open_zarr(store=hamt_store, chunks=None)
 
 
 def get_dataset_by_ipns_hash(ipns_name_hash: str, as_of: typing.Optional[datetime.datetime] = None) -> xr.Dataset:

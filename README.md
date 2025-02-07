@@ -1,7 +1,7 @@
 # dClimate-Zarr-Client
 Retrieve zarrs stored on IPLD.
 
-Uses [ipldstore](https://github.com/dClimate/ipldstore) to actually access zarrs, then provides
+Uses [py-hamt](https://github.com/dClimate/py-hamt) to actually access zarrs, then provides
 filtering and aggregation functionality to these zarrs using `xarray` native methods wherever possible.
 Filtering and aggregation are packaged into a minimal number of convenience functions optimized for flexbility
 and performance.
@@ -39,7 +39,7 @@ aggregations.
 ### ipfs_retrieval.py
 
 Functions for accessing zarrs over IPFS/IPNS. Functionality includes resolving IPNS keys to IPFS hashes
-based on key names, as well as using `ipldstore` to open the zarrs that those IPFS hashes point to.
+based on key names, as well as using `py-hamt` to open the zarrs that those IPFS hashes point to.
 
 
 ##  Usage:

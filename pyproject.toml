@@ -15,14 +15,14 @@ authors = [
     { name = "Chris Rossi", email = "chris@christophermrossi.com" },
     { name = "Robert Banick", email = "robert.banick@arbol.io" },
 ]
-requires-python = ">=3.9"
+requires-python = ">=3.12"
 dependencies = [
     "aiobotocore",
-    "xarray",
+    "xarray==2024.11.0",
     "rioxarray",
-    "zarr",
+    "zarr==2.18.3",
     "numpy",
-    "ipldstore @ git+https://github.com/dClimate/ipldstore@main",
+    "py_hamt @ git+https://github.com/dClimate/py-hamt@main",
     "requests",
     "pyarrow",
     "geopandas",
