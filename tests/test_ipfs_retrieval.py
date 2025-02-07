@@ -2,11 +2,11 @@ import datetime
 import json
 import pathlib
 
-import dclimate_zarr_client.ipfs_retrieval as ipfs_retrieval
+import src.ipfs_retrieval as ipfs_retrieval
 import pytest
 import xarray as xr
 import zarr
-from dclimate_zarr_client.dclimate_zarr_errors import NoMetadataFoundError
+from src.dclimate_zarr_errors import NoMetadataFoundError
 
 IPNS_NAME_HASH = "k2k4r8niyotlqqqvqoh7jr4gp6zp0b0975k88zmak151chv87w2p11qz"
 
@@ -34,15 +34,15 @@ def default_session_fixture(module_mocker):
     Patch metadata and Zarr retrieval functions in this test
     """
     module_mocker.patch(
-        "dclimate_zarr_client.ipfs_retrieval._get_single_metadata",
+        "src.ipfs_retrieval._get_single_metadata",
         patched_get_single_metadata,
     )
     module_mocker.patch(
-        "dclimate_zarr_client.ipfs_retrieval._resolve_ipns_name_hash",
+        "src.ipfs_retrieval._resolve_ipns_name_hash",
         patched_resolve_ipns_name_hash,
     )
     module_mocker.patch(
-        "dclimate_zarr_client.ipfs_retrieval.get_dataset_by_ipfs_hash",
+        "src.ipfs_retrieval.get_dataset_by_ipfs_hash",
         patched_get_dataset_by_ipfs_hash,
     )
 

@@ -4,13 +4,13 @@ import pathlib
 
 import pytest
 
-from dclimate_zarr_client.dclimate_zarr_errors import (
+from src.dclimate_zarr_errors import (
     BucketNotFoundError,
     PathNotFoundError,
     ZarrClientError,
 )
 
-from dclimate_zarr_client.zarr_metadata import (
+from src.zarr_metadata import (
     get_standard_collections,
     get_forecast_collections,
     get_collection_metadata,
@@ -27,7 +27,7 @@ class TestZarrMetadata:
     @pytest.fixture()
     def s3_fs(self, mocker):
         s3fs_mock = mocker.Mock()
-        mocker.patch("dclimate_zarr_client.zarr_metadata.get_s3_fs", return_value=s3fs_mock)
+        mocker.patch("src.zarr_metadata.get_s3_fs", return_value=s3fs_mock)
         return s3fs_mock
 
     class TestGetCollectionsFunction:
@@ -42,7 +42,7 @@ class TestZarrMetadata:
 
         def test__given_a_valid_bucket_name_and_bucket_contains_collections__then__they_are_returned(self, mocker):
             mocker.patch(
-                "dclimate_zarr_client.zarr_metadata.get_catalog_metadata",
+                "src.zarr_metadata.get_catalog_metadata",
                 return_value=json.loads(open(METADATA / "Data Catalog.json").read()),
             )
             bucket_name = "zarr-dev"
@@ -54,7 +54,7 @@ class TestZarrMetadata:
             self, mocker
         ):
             mocker.patch(
-                "dclimate_zarr_client.zarr_metadata.get_catalog_metadata",
+                "src.zarr_metadata.get_catalog_metadata",
                 return_value=json.loads(open(METADATA / "Data Catalog.json").read()),
             )
             bucket_name = "zarr-dev"
@@ -66,7 +66,7 @@ class TestZarrMetadata:
             self, mocker, s3_fs
         ):
             mocker.patch(
-                "dclimate_zarr_client.zarr_metadata.get_catalog_metadata",
+                "src.zarr_metadata.get_catalog_metadata",
                 return_value=json.loads(open(METADATA / "Empty Data Catalog.json").read()),
             )
             bucket_name = "zarr-dev"
@@ -249,7 +249,7 @@ class TestZarrMetadata:
             with pytest.raises(ZarrClientError) as e:
                 get_catalog_metadata(bucket_name)
 
-            assert str(e.value) == f"There is more than one Data Catalog object"
+            assert str(e.value) == "There is more than one Data Catalog object"
 
         def test__if_there_is_no_data_catalog_object__then__an_error_is_thrown(self, mocker, s3_fs):
             fake_metadata_folder_content = [
@@ -262,7 +262,7 @@ class TestZarrMetadata:
             with pytest.raises(ZarrClientError) as e:
                 get_catalog_metadata(bucket_name)
 
-            assert str(e.value) == f"There is not any Data Catalog object"
+            assert str(e.value) == "There is not any Data Catalog object"
 
         def test__if_there_exactly_one_data_catalog_object_then__its_content_is_returned(self, mocker, s3_fs):
             fake_metadata_folder_content = [

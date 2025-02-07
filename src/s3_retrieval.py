@@ -7,7 +7,7 @@ import typing
 import json
 import xarray as xr
 
-from dclimate_zarr_client.dclimate_zarr_errors import DatasetNotFoundError
+from src.dclimate_zarr_errors import DatasetNotFoundError
 
 
 @lru_cache(maxsize=1)

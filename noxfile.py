@@ -8,8 +8,7 @@ S3_ONLY_INTERPRETER = "3.9"
 
 # aiohttp is not building on Python 3.12
 IPFS_VALID_INTERPRETERS = (
-    "3.10",
-    "3.11",
+    "3.12",
 )
 CODE = "dclimate_zarr_client"
 DEFAULT_INTERPRETER = "3.10"

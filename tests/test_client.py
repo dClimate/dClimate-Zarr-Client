@@ -8,8 +8,8 @@ import pytest
 import xarray as xr
 import zarr
 
-import dclimate_zarr_client.client as client
-from dclimate_zarr_client.dclimate_zarr_errors import (
+import src.client as client
+from src.dclimate_zarr_errors import (
     SelectionTooLargeError,
     ConflictingGeoRequestError,
     NoDataFoundError,
@@ -22,8 +22,8 @@ from xarray.core.variable import MissingDimensionsError
 SAMPLE_ZARRS = pathlib.Path(__file__).parent / "etc" / "sample_zarrs"
 
 
-@unittest.mock.patch("dclimate_zarr_client.ipfs_retrieval.get_dataset_by_ipns_hash")
-@unittest.mock.patch("dclimate_zarr_client.ipfs_retrieval.get_ipns_name_hash")
+@unittest.mock.patch("src.ipfs_retrieval.get_dataset_by_ipns_hash")
+@unittest.mock.patch("src.ipfs_retrieval.get_ipns_name_hash")
 def test_load_ipns(get_ipns_hash, get_dataset_by_ipns_hash, dataset):
     get_ipns_hash.return_value = "thehash"
     get_dataset_by_ipns_hash.return_value = dataset
@@ -35,8 +35,8 @@ def test_load_ipns(get_ipns_hash, get_dataset_by_ipns_hash, dataset):
     get_dataset_by_ipns_hash.assert_called_once_with("thehash", as_of=None)
 
 
-@unittest.mock.patch("dclimate_zarr_client.ipfs_retrieval.get_dataset_by_ipns_hash")
-@unittest.mock.patch("dclimate_zarr_client.ipfs_retrieval.get_ipns_name_hash")
+@unittest.mock.patch("src.ipfs_retrieval.get_dataset_by_ipns_hash")
+@unittest.mock.patch("src.ipfs_retrieval.get_ipns_name_hash")
 def test_load_ipns_with_as_of(get_ipns_hash, get_dataset_by_ipns_hash, dataset):
     get_ipns_hash.return_value = "thehash"
     get_dataset_by_ipns_hash.return_value = dataset
@@ -48,7 +48,7 @@ def test_load_ipns_with_as_of(get_ipns_hash, get_dataset_by_ipns_hash, dataset):
     get_dataset_by_ipns_hash.assert_called_once_with("thehash", as_of="as_of")
 
 
-@unittest.mock.patch("dclimate_zarr_client.client.get_dataset_from_s3")
+@unittest.mock.patch("src.client.get_dataset_from_s3")
 def test_load_s3(get_dataset_from_s3, dataset):
     get_dataset_from_s3.return_value = dataset
 
@@ -95,15 +95,15 @@ def patch_ipns_s3(module_mocker):
     Patch IPNS dataset retrieval functions in this test
     """
     module_mocker.patch(
-        "dclimate_zarr_client.ipfs_retrieval.get_ipns_name_hash",
+        "src.ipfs_retrieval.get_ipns_name_hash",
         patched_get_ipns_name_hash,
     )
     module_mocker.patch(
-        "dclimate_zarr_client.ipfs_retrieval.get_dataset_by_ipns_hash",
+        "src.ipfs_retrieval.get_dataset_by_ipns_hash",
         patched_get_dataset_by_ipns_hash,
     )
     module_mocker.patch(
-        "dclimate_zarr_client.client.get_dataset_from_s3",
+        "src.client.get_dataset_from_s3",
         patched_get_dataset_from_s3,
     )
 
@@ -406,11 +406,11 @@ class TestClient:
             dataset_name = "copernicus_ocean_salinity_1p5_meters"
             bucket_name = ("zarr-prod",)
             get_dataset_from_s3_mock = mocker.patch(
-                "dclimate_zarr_client.client.get_dataset_from_s3",
+                "src.client.get_dataset_from_s3",
                 return_value=fake_dataset,
             )
             # mocker.patch(
-            #     "dclimate_zarr_client.client._prepare_dict", return_value=fake_dataset
+            #     "src.client._prepare_dict", return_value=fake_dataset
             # )
 
             client.geo_temporal_query(
@@ -428,7 +428,7 @@ class TestClient:
             bucket_name = ("zarr-prod",)
             forecast_reference_time = "2021-05-05"
             get_dataset_from_s3_mock = mocker.patch(
-                "dclimate_zarr_client.client.get_dataset_from_s3",
+                "src.client.get_dataset_from_s3",
                 return_value=fake_forecast_dataset,
             )
 
