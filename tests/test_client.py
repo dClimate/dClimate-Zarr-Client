@@ -120,7 +120,7 @@ def test_geo_temporal_query(polygons_mask, points_mask):
     point = client.geo_temporal_query(
         dataset_name="era5_wind_100m_u-hourly",
         bucket_name="zarr-dev",
-        point_kwargs={"lat": 39.75, "lon": -118.5},
+        point_kwargs={"latitude": 39.75, "longitude": -118.5},
         rolling_agg_kwargs={"window_size": 5, "agg_method": "mean"},
         point_limit=None,
     )
@@ -216,7 +216,7 @@ def test_geo_conflicts():
         client.geo_temporal_query(
             dataset_name="era5_wind_100m_u-hourly",
             bucket_name="zarr-dev",
-            point_kwargs={"lat": 39.75, "lon": -118.5},
+            point_kwargs={"latitude": 39.75, "longitude": -118.5},
             spatial_agg_kwargs={"agg_method": "std"},
         )
     assert multi_exc_info.match("User requested more than one type of geographic query")
@@ -289,7 +289,7 @@ def test_invalid_export():
         client.geo_temporal_query(
             dataset_name="era5_wind_100m_u-hourly",
             bucket_name="zarr-dev",
-            point_kwargs={"lat": 39.75, "lon": -118.5},
+            point_kwargs={"latitude": 39.75, "longitude": -118.5},
             output_format="GRIB",
         )
 
@@ -316,7 +316,7 @@ def test_no_data_in_selection_error():
             dataset_name="era5_wind_100m_u-hourly",
             bucket_name="zarr-dev",
             time_range=[datetime.datetime(1900, 1, 1), datetime.datetime(1910, 1, 1)],
-            point_kwargs={"lat": 39.75, "lon": -118.5},
+            point_kwargs={"latitude": 39.75, "longitude": -118.5},
         )
 
 

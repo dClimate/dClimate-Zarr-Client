@@ -10,6 +10,7 @@ from .dclimate_zarr_errors import DatasetNotFoundError, NoMetadataFoundError
 
 DEFAULT_HOST = "http://127.0.0.1:5001/api/v0"
 VALID_TIME_SPANS = ["daily", "hourly", "weekly", "quarterly"]
+CID_ENDPOINT = "https://dclimate.github.io/dclimate-data-cids/cids.json"
 
 
 def _get_host(uri: str = "/api/v0"):
@@ -86,11 +87,12 @@ def get_ipns_name_hash(ipns_key_str: str) -> str:
     Returns:
         str: ipfsname hash corresponding to the provided string
     """
-    r = requests.post(f"{_get_host()}/key/list", params={"decoder": "json"})
+    r = requests.get(CID_ENDPOINT, params={"decoder": "json"})
     r.raise_for_status()
-    for entry in r.json()["Keys"]:
-        if entry["Name"] == ipns_key_str:
-            return entry["Id"]
+    json_cid = r.json()
+    for entry in json_cid:
+        if entry == ipns_key_str:
+            return json_cid[entry]
     raise DatasetNotFoundError("Invalid dataset name")
 
 
@@ -118,17 +120,17 @@ def _get_relevant_metadata(ipfs_head_hash: str, as_of: datetime.datetime) -> dic
         cur_metadata = _get_single_metadata(prev_hash)
 
 
-def get_dataset_by_ipfs_hash(ipfs_hash: str) -> xr.Dataset:
-    """Gets xarray dataset using changing ipfs hash
+# def get_dataset_by_ipfs_hash(ipfs_hash: str) -> xr.Dataset:
+#     """Gets xarray dataset using changing ipfs hash
 
-    Args:
-        ipfs_hash (str): ipfs hash that changes between updates
+#     Args:
+#         ipfs_hash (str): ipfs hash that changes between updates
 
-    Returns:
-        xr.Dataset: dataset corresponding to hash
-    """
-    hamt_store = HAMT(store=IPFSStore(), root_node_id=ipfs_hash, read_only=True)
-    return xr.open_zarr(store=hamt_store, chunks=None)
+#     Returns:
+#         xr.Dataset: dataset corresponding to hash
+#     """
+#     hamt_store = HAMT(store=IPFSStore(), root_node_id=ipfs_hash, read_only=True)
+#     return xr.open_zarr(store=hamt_store, chunks=None)
 
 
 def get_dataset_by_ipns_hash(ipns_name_hash: str, as_of: typing.Optional[datetime.datetime] = None) -> xr.Dataset:
@@ -142,16 +144,8 @@ def get_dataset_by_ipns_hash(ipns_name_hash: str, as_of: typing.Optional[datetim
     Returns:
         xr.Dataset: dataset corresponding to hash and as_of date
     """
-    ipfs_head_hash = _resolve_ipns_name_hash(ipns_name_hash)
-    if as_of:
-        metadata = _get_relevant_metadata(ipfs_head_hash, as_of=as_of)
-    else:
-        metadata = _get_single_metadata(ipfs_head_hash)
-    try:
-        dataset_hash = get_dataset_by_ipfs_hash(metadata["assets"]["zmetadata"]["href"]["/"])
-    except KeyError:
-        dataset_hash = get_dataset_by_ipfs_hash(metadata["assets"]["analytic"]["href"]["/"])
-    return dataset_hash
+    hamt_store = HAMT(store=IPFSStore(), root_node_id=ipns_name_hash, read_only=True)
+    return xr.open_zarr(store=hamt_store, chunks=None)
 
 
 def get_metadata_by_key(key: str) -> dict:
@@ -167,26 +161,13 @@ def get_metadata_by_key(key: str) -> dict:
     ipfs_hash = _resolve_ipns_name_hash(ipns_name)
     return _get_single_metadata(ipfs_hash)
 
-
-def get_heads() -> typing.Dict[str, str]:
-    """Get datasets available on IPFS node and their most recent CID
-
-    Returns:
-        typing.Dict[str, str]: Dictionary of dataset keys and CID values
-    """
-    r = requests.post(f"{_get_host()}/key/list", params={"decoder": "json"})
-    r.raise_for_status()
-    return {
-        name_dict["Name"]: name_dict["Id"]
-        for name_dict in r.json()["Keys"]
-        if any([span in name_dict["Name"] for span in VALID_TIME_SPANS])
-    }
-
-
 def list_datasets() -> typing.List[str]:
     """List datasets available on IPFS node
 
     Returns:
         typing.List[str]: List of available datasets' keys
     """
-    return list(get_heads().keys())
+    r = requests.get(CID_ENDPOINT, params={"decoder": "json"})
+    r.raise_for_status()
+    json_cid = r.json()
+    return list(json_cid.keys())

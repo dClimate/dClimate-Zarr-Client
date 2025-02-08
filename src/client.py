@@ -172,7 +172,6 @@ def geo_temporal_query(
         data = load_s3(dataset_name, bucket_name)
     else:
         raise ValueError("only possible sources are s3 and IPFS")
-
     # If specific variable is requested, use that
     if var_name is not None:
         data = data.use(var_name)

@@ -160,15 +160,14 @@ class GeotemporalData:
         trange = pd.date_range(start=self.data.time[0].values, end=self.data.time[-1].values, freq="1h")
         return self._new(self.data.reindex(time=trange))
 
-    def point(self, lat: float, lon: float, snap_to_grid: bool = True) -> "GeotemporalData":
+    def point(self, latitude: float, longitude: float, snap_to_grid: bool = True) -> "GeotemporalData":
         """Gets a dataset corresponding to the full time series for a single point
 
         Parameters
         ----------
-
-        lat: float
+        latitude: float
             Latitude coordinate
-        lon: float
+        longitude: float
             Longitude coordinate
         snap_to_grid: bool, optional
             When ``True``, find nearest point to lat, lon in dataset. When ``False``,
@@ -180,11 +179,10 @@ class GeotemporalData:
             New dataset restricted to single point
         """
         if snap_to_grid:
-            data = self.data.sel(latitude=lat, longitude=lon, method="nearest")
-
+            data = self.data.sel(latitude=latitude, longitude=longitude, method="nearest")
         else:
             try:
-                data = self.data.sel(latitude=lat, longitude=lon, method="nearest", tolerance=10e-5)
+                data = self.data.sel(latitude=latitude, longitude=longitude, method="nearest", tolerance=10e-5)
             except KeyError:
                 raise errors.NoDataFoundError("User requested not to snap_to_grid, but exact coord not in dataset")
 
@@ -527,7 +525,7 @@ class GeotemporalData:
         vals = self.data_var.values
         ret_dict = {}
         dimensions = []
-        ret_dict["unit of measurement"] = self.data.attrs["unit of measurement"]
+        ret_dict["units"] = self.data_var.attrs["units"]
         if "time" in self.data:
             ret_dict["times"] = np.datetime_as_string(self.data.time.values, unit="s").flatten().tolist()
             dimensions.append("time")
