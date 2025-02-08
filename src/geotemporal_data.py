@@ -525,7 +525,7 @@ class GeotemporalData:
         vals = self.data_var.values
         ret_dict = {}
         dimensions = []
-        ret_dict["units"] = self.data_var.attrs["units"]
+        ret_dict["units"] = self.data_var.attrs.get("units", "unknown")
         if "time" in self.data:
             ret_dict["times"] = np.datetime_as_string(self.data.time.values, unit="s").flatten().tolist()
             dimensions.append("time")

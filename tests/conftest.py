@@ -76,6 +76,7 @@ def make_dataset(vars=3, shape=[20, 20, 20]):
             data,
             dims=("time", "latitude", "longitude"),
             coords=(time, latitude, longitude),
+            attrs={"units": "K"},
         )
 
     return xr.Dataset(data_vars)

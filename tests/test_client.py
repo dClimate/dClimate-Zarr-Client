@@ -354,7 +354,7 @@ class TestClient:
                 coords=(time, lat, lon),
             )
 
-            attrs = {"unit of measurement": "mm"}
+            attrs = {"units": "mm"}
             fake_dataset = xr.Dataset({"data_var": data}, attrs=attrs)
             return fake_dataset
 
@@ -398,7 +398,7 @@ class TestClient:
                 coords=(forecast_reference_time, step, lat, lon),
             )
 
-            attrs = {"unit of measurement": "mm"}
+            attrs = {"units": "mm"}
             fake_dataset = xr.Dataset({"data_var": data}, attrs=attrs)
             return fake_dataset
 

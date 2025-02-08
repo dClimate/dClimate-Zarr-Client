@@ -70,15 +70,20 @@ ds_bytes = dataset.to_netcdf()
 
 ds = xr.open_dataset(ds_bytes)
 ```
+## Install
+
+```shell
+uv sync
+```
+
 ## Run tests for your local environment:
 ```shell
-cd
-pytest tests
+uv run pytest tests/
 ```
 
 ## Run all acceptance tests:
 ```shell
-nox
+uv run nox
 ```
 
 ## Environment requirements:

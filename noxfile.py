@@ -11,7 +11,7 @@ IPFS_VALID_INTERPRETERS = (
     "3.12",
 )
 CODE = "dclimate_zarr_client"
-DEFAULT_INTERPRETER = "3.10"
+DEFAULT_INTERPRETER = "3.12"
 HERE = pathlib.Path(__file__).parent
 
 

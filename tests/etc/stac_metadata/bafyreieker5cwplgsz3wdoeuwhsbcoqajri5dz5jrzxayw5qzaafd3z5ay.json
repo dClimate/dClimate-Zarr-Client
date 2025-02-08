@@ -56,7 +56,7 @@
             "Wind"
         ],
         "temporal resolution": "hourly",
-        "unit of measurement": "m / s",
+        "units": "m / s",
         "update cadence": "daily",
         "updated": "2022-07-26T19:17:54Z"
     },
