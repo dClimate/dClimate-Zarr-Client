@@ -43,6 +43,8 @@ jobs:
 
       - name: Install all dependencies
         run: |
+          uv venv
+          source .venv/bin/activate
           uv pip install nox
           uv sync --extra dev --extra testing
 
