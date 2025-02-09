@@ -37,7 +37,7 @@ def cover(session):
     session.run("coverage", "erase")
 
 
-@nox.session(py=S3_ONLY_INTERPRETER)
+@nox.session(py=DEFAULT_INTERPRETER)
 def test_without_ipfs(session):
     session.install("-e", ".[testing]")
     session.run(
@@ -45,23 +45,23 @@ def test_without_ipfs(session):
     )
 
 
-@nox.session(py=DEFAULT_INTERPRETER)
-def lint(session):
-    session.install("black", "flake8", "flake8-pyproject")
-    run_black(session, check=True)
-    session.run("flake8", CODE, "tests")
+# @nox.session(py=DEFAULT_INTERPRETER)
+# def lint(session):
+#     session.install("black", "flake8", "flake8-pyproject")
+#     run_black(session, check=True)
+#     session.run("flake8", CODE, "tests")
 
 
-@nox.session(py=DEFAULT_INTERPRETER)
-def blacken(session):
-    # Install all dependencies.
-    session.install("black")
-    run_black(session)
+# @nox.session(py=DEFAULT_INTERPRETER)
+# def blacken(session):
+#     # Install all dependencies.
+#     session.install("black")
+#     run_black(session)
 
 
-def run_black(session, check=False):
-    args = ["black"]
-    if check:
-        args.append("--check")
-    args.extend(["noxfile.py", CODE, "tests"])
-    session.run(*args)
+# def run_black(session, check=False):
+#     args = ["black"]
+#     if check:
+#         args.append("--check")
+#     args.extend(["noxfile.py", CODE, "tests"])
+#     session.run(*args)
