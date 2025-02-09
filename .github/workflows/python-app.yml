@@ -50,4 +50,5 @@ jobs:
 
       - name: Run nox
         run: |
+          source .venv/bin/activate
           nox
