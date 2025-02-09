@@ -6,7 +6,7 @@ build-backend = "pdm.backend"
 
 [project]
 name = "dclimate_zarr_client"
-version = "0.1.0"  # Set a static version or handle it in versioning strategy
+version = "0.1.0" # Set a static version or handle it in versioning strategy
 authors = [
     { name = "Evan Schechter", email = "evan@arbol.io" },
     { name = "Chris Rossi", email = "chris@christophermrossi.com" },
@@ -36,21 +36,11 @@ Homepage = "https://dclimate.net/"
 line-length = 119
 
 [project.optional-dependencies]
-testing = [
-    "pytest",
-    "pytest-cov",
-    "pytest-mock",
-]
-dev = [
-    "black",
-    "flake8",
-    "flake8-pyproject",
-    "nox"
-]
+testing = ["pytest", "pytest-cov", "pytest-mock"]
+dev = ["black", "flake8", "flake8-pyproject", "nox"]
 
 [tool.flake8]
 # flake8 and black disagree on E203 and W503
 ignore = "E203 W503"
 exclude = ".nox"
 max-line-length = 120
-
