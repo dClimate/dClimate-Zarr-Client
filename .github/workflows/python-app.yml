@@ -42,7 +42,7 @@ jobs:
           version: "latest"
 
       - name: Install all dependencies
-        run: uv sync --extra dev testing
+        run: uv sync --extra dev --extra testing
 
       - name: Run nox
         run: |
