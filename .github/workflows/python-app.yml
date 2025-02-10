@@ -56,12 +56,6 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Check linting with ruff
-        run: uv run ruff check
-
-      - name: Check formatting with ruff
-        run: uv run ruff format --check
-
       - name: Run nox
         run: |
           source .venv/bin/activate

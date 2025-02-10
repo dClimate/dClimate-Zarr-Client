@@ -47,5 +47,6 @@ max-line-length = 120
 
 [tool.uv]
 dev-dependencies = [
+    "pre-commit>=4.1.0",
     "ruff>=0.9.5",
 ]
