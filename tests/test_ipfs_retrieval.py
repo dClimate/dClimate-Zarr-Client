@@ -4,8 +4,8 @@ import pathlib
 
 import src.ipfs_retrieval as ipfs_retrieval
 import pytest
-import xarray as xr
-import zarr
+# import xarray as xr
+# import zarr
 from src.client import geo_temporal_query
 
 IPNS_NAME_HASH = "k2k4r8niyotlqqqvqoh7jr4gp6zp0b0975k88zmak151chv87w2p11qz"

@@ -44,3 +44,8 @@ dev = ["black", "flake8", "flake8-pyproject", "nox"]
 ignore = "E203 W503"
 exclude = ".nox"
 max-line-length = 120
+
+[tool.uv]
+dev-dependencies = [
+    "ruff>=0.9.5",
+]

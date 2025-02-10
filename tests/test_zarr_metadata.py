@@ -229,7 +229,7 @@ class TestZarrMetadata:
         def test_if_there_is_not_metadata_folder__then__an_error_is_thrown(self, mocker, s3_fs):
             s3_fs.exists = mocker.Mock(side_effect=[True, False])
             bucket_name = "zarr-dev"
-            invalid_dataset_name = "invalid"
+            # invalid_dataset_name = "invalid"
 
             with pytest.raises(PathNotFoundError) as e:
                 get_catalog_metadata(bucket_name)
