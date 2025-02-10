@@ -1,3 +1,4 @@
+[![codecov](https://codecov.io/gh/dClimate/dClimate-Zarr-Client/graph/badge.svg?token=AovaMO6DX5)](https://codecov.io/gh/dClimate/dClimate-Zarr-Client)
 # dClimate-Zarr-Client
 Retrieve zarrs stored on IPLD.
 

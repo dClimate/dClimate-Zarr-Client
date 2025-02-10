@@ -56,9 +56,6 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Check coverage
-        run: uv run coverage report --fail-under=100 --show-missing
-
       - name: Run nox
         run: |
           source .venv/bin/activate
