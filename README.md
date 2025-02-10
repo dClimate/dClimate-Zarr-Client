@@ -44,32 +44,35 @@ based on key names, as well as using `py-hamt` to open the zarrs that those IPFS
 
 ##  Usage:
 
-While in virtual environment and at root of repo, run `pip install -e .` to install the package's core functionality.
-To install with extra packages for development and testing, run `pip install -e .\[testing,dev]`. Then you can run python
-code like:
-
 ```python
-# Singleton Function Interface
 from datetime import datetime
 import xarray as xr
 import dclimate_zarr_client as client
+
+# Singleton Function Interface
 ds_name = "era5_wind_100m_u-hourly"
 ds_bytes = client.geo_temporal_query(
     ds_name,
     point_kwargs={"lat": 40, "lon": -120},
     time_range=[datetime(2021, 1, 1), datetime(2022, 12, 31)],
-    output_format="netcdf"
+    output_format="netcdf",
+    # gateway_uri="http://<IP>:<PORT>" Optionally pass your own gateway, defaults of py-hamt defaults to "http://127.0.0.1:8080"
 )
 ds = xr.open_dataset(ds_bytes)
 
 # Pythonic Interface
 dataset = client.load_ipns(ds_name)
+# Optionally custom gateway
+# dataset = client.load_ipns(ds_name, gateway_uri="http://<IP>:<PORT>")
 dataset = dataset.point(lat=40, lon=-120)
 dataset = dataset.time_range(datetime(2021, 1, 1), datetime(2022, 12, 31))
 ds_bytes = dataset.to_netcdf()
 
 ds = xr.open_dataset(ds_bytes)
 ```
+
+> More examples can be found at https://github.com/dClimate/jupyter-notebooks/tree/main/notebooks
+
 ## Install
 
 ```shell
@@ -89,6 +92,6 @@ uv run nox
 ## Environment requirements:
 
 - Running IPFS daemon
-- Dataset parsed with [gridded-etl-tools](https://github.com/Arbol-Project/gridded-etl-tools/) with name `ds_name`
+- Dataset parsed with [etl-scripts](https://github.com/dClimate/etl-scripts) with name `ds_name`
 - Up-to-date IPNS table (IPNS key for `ds_name` can't be expired).
   If `ipfs name resolve <ipns key>` stalls out, the IPNS key is expired and `publish_metadata` step of ETL must be rerun.

@@ -32,7 +32,7 @@ def test_load_ipns(get_ipns_hash, get_dataset_by_ipns_hash, dataset):
     assert data.data is dataset
 
     get_ipns_hash.assert_called_once_with("dataset_name")
-    get_dataset_by_ipns_hash.assert_called_once_with("thehash", as_of=None)
+    get_dataset_by_ipns_hash.assert_called_once_with("thehash", as_of=None, gateway_uri=None)
 
 
 @unittest.mock.patch("src.ipfs_retrieval.get_dataset_by_ipns_hash")
@@ -45,7 +45,9 @@ def test_load_ipns_with_as_of(get_ipns_hash, get_dataset_by_ipns_hash, dataset):
     assert data.data is dataset
 
     get_ipns_hash.assert_called_once_with("dataset_name")
-    get_dataset_by_ipns_hash.assert_called_once_with("thehash", as_of="as_of")
+    get_dataset_by_ipns_hash.assert_called_once_with("thehash", as_of="as_of", gateway_uri=None)
+
+
 
 
 @unittest.mock.patch("src.client.get_dataset_from_s3")
@@ -66,7 +68,7 @@ def patched_get_ipns_name_hash(ipns_key):
     return "bafyreiglm3xvfcwkjbdqlwg3mc6zgngxuyfj6tkgfb6qobtmlzobpp63sq"
 
 
-def patched_get_dataset_by_ipns_hash(ipfs_hash, as_of):
+def patched_get_dataset_by_ipns_hash(ipfs_hash, as_of, gateway_uri=None):
     """
     Patch ipns dataset function to return a prepared dataset for testing
     """

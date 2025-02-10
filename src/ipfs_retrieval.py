@@ -133,7 +133,7 @@ def _get_relevant_metadata(ipfs_head_hash: str, as_of: datetime.datetime) -> dic
 #     return xr.open_zarr(store=hamt_store, chunks=None)
 
 
-def get_dataset_by_ipns_hash(ipns_name_hash: str, as_of: typing.Optional[datetime.datetime] = None) -> xr.Dataset:
+def get_dataset_by_ipns_hash(ipns_name_hash: str, as_of: typing.Optional[datetime.datetime] = None, gateway_uri: typing.Optional[str] = None, ) -> xr.Dataset:
     """Gets xarray dataset using fixed ipns name hash
 
     Args:
@@ -144,7 +144,15 @@ def get_dataset_by_ipns_hash(ipns_name_hash: str, as_of: typing.Optional[datetim
     Returns:
         xr.Dataset: dataset corresponding to hash and as_of date
     """
-    hamt_store = HAMT(store=IPFSStore(), root_node_id=ipns_name_hash, read_only=True)
+    store_kwargs = {}
+    if gateway_uri:
+        store_kwargs['gateway_uri_stem'] = gateway_uri
+        
+    hamt_store = HAMT(
+        store=IPFSStore(**store_kwargs),
+        root_node_id=ipns_name_hash,
+        read_only=True
+    )
     return xr.open_zarr(store=hamt_store, chunks=None)
 
 
