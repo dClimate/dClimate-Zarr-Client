@@ -72,7 +72,7 @@ ds_bytes = dataset.to_netcdf()
 ds = xr.open_dataset(ds_bytes)
 ```
 
-> More examples can be found at https://github.com/dClimate/jupyter-notebooks/tree/main/notebooks
+> More examples can be found at [dClimate Jupyter Notebooks](https://github.com/dClimate/jupyter-notebooks/tree/main/notebooks)
 
 ## Install
 
