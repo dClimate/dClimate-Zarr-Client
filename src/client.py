@@ -145,7 +145,8 @@ def geo_temporal_query(
         > 1
     ):
         raise ConflictingGeoRequestError(
-            "User requested more than one type of geographic query, but only one can " "be submitted at a time"
+            "User requested more than one type of geographic query, but only one can "
+            "be submitted at a time"
         )
     if spatial_agg_kwargs and point_kwargs:
         raise ConflictingGeoRequestError(
@@ -160,7 +161,8 @@ def geo_temporal_query(
         )
     if output_format not in ["array", "netcdf"]:
         raise InvalidExportFormatError(
-            "User requested an invalid export format. Only 'array' or 'netcdf' " "permitted."
+            "User requested an invalid export format. Only 'array' or 'netcdf' "
+            "permitted."
         )
 
     # Set defaults to avoid Nones accidentally passed by users causing a TypeError

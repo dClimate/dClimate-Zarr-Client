@@ -4,6 +4,7 @@ import pathlib
 
 import src.ipfs_retrieval as ipfs_retrieval
 import pytest
+
 # import xarray as xr
 # import zarr
 from src.client import geo_temporal_query
@@ -12,7 +13,9 @@ IPNS_NAME_HASH = "k2k4r8niyotlqqqvqoh7jr4gp6zp0b0975k88zmak151chv87w2p11qz"
 
 
 def patched_get_single_metadata(ipfs_hash):
-    with open(pathlib.Path(__file__).parent / "etc" / "stac_metadata" / f"{ipfs_hash}.json") as f:
+    with open(
+        pathlib.Path(__file__).parent / "etc" / "stac_metadata" / f"{ipfs_hash}.json"
+    ) as f:
         return json.load(f)
 
 
@@ -46,6 +49,7 @@ def default_session_fixture(module_mocker):
     #     patched_get_dataset_by_ipfs_hash,
     # )
 
+
 def test_get_ipns_name_hash():
     """
     Test that `get_ipns_name_hash`  returns json of dataset names and hashes
@@ -53,6 +57,7 @@ def test_get_ipns_name_hash():
     ipns_name_hash = ipfs_retrieval.get_ipns_name_hash("cpc-precip-conus")
     # Assert that it starts with ba
     assert ipns_name_hash.startswith("ba")
+
 
 def test_list_datasets():
     """
@@ -62,6 +67,7 @@ def test_list_datasets():
     assert len(datasets) == 3
     assert "cpc-precip-conus" in datasets
 
+
 def test_geo_temporal_query():
     ds_bytes = geo_temporal_query(
         "chirps-final-p05",
@@ -69,6 +75,7 @@ def test_geo_temporal_query():
         time_range=[datetime.datetime(2021, 1, 1), datetime.datetime(2021, 1, 1)],
     )
     assert ds_bytes["data"][0] == 2.8954310417175293
+
 
 # def test_get_dataset_by_ipns_hash_no_as_of():
 #     """

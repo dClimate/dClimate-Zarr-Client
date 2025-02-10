@@ -7,9 +7,7 @@ import nox
 S3_ONLY_INTERPRETER = "3.9"
 
 # aiohttp is not building on Python 3.12
-IPFS_VALID_INTERPRETERS = (
-    "3.12",
-)
+IPFS_VALID_INTERPRETERS = ("3.12",)
 CODE = "dclimate_zarr_client"
 DEFAULT_INTERPRETER = "3.12"
 HERE = pathlib.Path(__file__).parent
@@ -41,7 +39,10 @@ def cover(session):
 def test_without_ipfs(session):
     session.install("-e", ".[testing]")
     session.run(
-        "pytest", "tests/test_geotemporal_data.py", "tests/test_s3_retrieval.py", "tests/test_zarr_metadata.py"
+        "pytest",
+        "tests/test_geotemporal_data.py",
+        "tests/test_s3_retrieval.py",
+        "tests/test_zarr_metadata.py",
     )
 
 

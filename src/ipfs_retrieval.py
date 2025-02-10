@@ -55,7 +55,9 @@ def _get_previous_hash_from_metadata(metadata: dict) -> typing.Optional[str]:
     """
     links = metadata["links"]
     try:
-        link_to_previous = [link for link in links if link["rel"] in {"prev", "previous"}][0]
+        link_to_previous = [
+            link for link in links if link["rel"] in {"prev", "previous"}
+        ][0]
     except IndexError:
         return None
     return link_to_previous["metadata href"]["/"]
@@ -70,7 +72,9 @@ def _resolve_ipns_name_hash(ipns_name_hash: str) -> str:
     Returns:
         str: ipfs hash corresponding to this ipns name hash
     """
-    r = requests.post(f"{_get_host()}/name/resolve", params={"arg": ipns_name_hash, "offline": True})
+    r = requests.post(
+        f"{_get_host()}/name/resolve", params={"arg": ipns_name_hash, "offline": True}
+    )
     r.raise_for_status()
     return r.json()["Path"].split("/")[-1]
 
@@ -111,7 +115,9 @@ def _get_relevant_metadata(ipfs_head_hash: str, as_of: datetime.datetime) -> dic
     """
     cur_metadata = _get_single_metadata(ipfs_head_hash)
     while True:
-        time_generated = datetime.datetime.strptime(cur_metadata["properties"]["updated"], "%Y-%m-%dT%H:%M:%SZ")
+        time_generated = datetime.datetime.strptime(
+            cur_metadata["properties"]["updated"], "%Y-%m-%dT%H:%M:%SZ"
+        )
         if time_generated <= as_of:
             return cur_metadata
         prev_hash = _get_previous_hash_from_metadata(cur_metadata)
@@ -133,7 +139,11 @@ def _get_relevant_metadata(ipfs_head_hash: str, as_of: datetime.datetime) -> dic
 #     return xr.open_zarr(store=hamt_store, chunks=None)
 
 
-def get_dataset_by_ipns_hash(ipns_name_hash: str, as_of: typing.Optional[datetime.datetime] = None, gateway_uri: typing.Optional[str] = None, ) -> xr.Dataset:
+def get_dataset_by_ipns_hash(
+    ipns_name_hash: str,
+    as_of: typing.Optional[datetime.datetime] = None,
+    gateway_uri: typing.Optional[str] = None,
+) -> xr.Dataset:
     """Gets xarray dataset using fixed ipns name hash
 
     Args:
@@ -146,12 +156,10 @@ def get_dataset_by_ipns_hash(ipns_name_hash: str, as_of: typing.Optional[datetim
     """
     store_kwargs = {}
     if gateway_uri:
-        store_kwargs['gateway_uri_stem'] = gateway_uri
-        
+        store_kwargs["gateway_uri_stem"] = gateway_uri
+
     hamt_store = HAMT(
-        store=IPFSStore(**store_kwargs),
-        root_node_id=ipns_name_hash,
-        read_only=True
+        store=IPFSStore(**store_kwargs), root_node_id=ipns_name_hash, read_only=True
     )
     return xr.open_zarr(store=hamt_store, chunks=None)
 
@@ -168,6 +176,7 @@ def get_metadata_by_key(key: str) -> dict:
     ipns_name = get_ipns_name_hash(key)
     ipfs_hash = _resolve_ipns_name_hash(ipns_name)
     return _get_single_metadata(ipfs_hash)
+
 
 def list_datasets() -> typing.List[str]:
     """List datasets available on IPFS node

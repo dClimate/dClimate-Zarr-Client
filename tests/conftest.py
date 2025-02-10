@@ -64,12 +64,14 @@ def make_dataset(vars=3, shape=[20, 20, 20]):
     latitude = np.arange(0, 10 * shape[1], 10)
     latitude = xr.DataArray(latitude, dims="latitude", coords={"latitude": latitude})
     longitude = np.arange(180, 180 + 5 * shape[2], 5)
-    longitude = xr.DataArray(longitude, dims="longitude", coords={"longitude": longitude})
+    longitude = xr.DataArray(
+        longitude, dims="longitude", coords={"longitude": longitude}
+    )
 
     points = shape[0] * shape[1] * shape[2]
     data_vars = {}
     for i in range(vars):
-        var_name = f"var_{i+1}"
+        var_name = f"var_{i + 1}"
         data = [10000 * i + j for j in range(points)]
         data = np.array(data).reshape(shape)
         data_vars[var_name] = xr.DataArray(
