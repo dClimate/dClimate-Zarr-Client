@@ -4,12 +4,10 @@ import pathlib
 
 import pytest
 import requests
-import os
 from unittest.mock import patch, mock_open
 from src.ipfs_retrieval import get_ipns_name_hash, DatasetNotFoundError
 
 import src.ipfs_retrieval as ipfs_retrieval
-import pytest
 
 # import xarray as xr
 # import zarr
