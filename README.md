@@ -43,7 +43,7 @@ Functions for accessing zarrs over IPFS/IPNS. Functionality includes resolving I
 based on key names, as well as using `py-hamt` to open the zarrs that those IPFS hashes point to.
 
 
-##  Usage:
+##  Usage
 
 ```python
 from datetime import datetime
@@ -80,17 +80,17 @@ ds = xr.open_dataset(ds_bytes)
 uv sync
 ```
 
-## Run tests for your local environment:
+## Run tests for your local environment
 ```shell
 uv run pytest tests/
 ```
 
-## Run all acceptance tests:
+## Run all acceptance tests
 ```shell
 uv run nox
 ```
 
-## Environment requirements:
+## Environment requirements
 
 - Running IPFS daemon
 - Dataset parsed with [etl-scripts](https://github.com/dClimate/etl-scripts) with name `ds_name`
