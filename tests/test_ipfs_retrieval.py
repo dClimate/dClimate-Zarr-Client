@@ -2,6 +2,12 @@ import datetime
 import json
 import pathlib
 
+import pytest
+import requests
+import os
+from unittest.mock import patch, mock_open
+from src.ipfs_retrieval import get_ipns_name_hash, DatasetNotFoundError
+
 import src.ipfs_retrieval as ipfs_retrieval
 import pytest
 
@@ -58,6 +64,60 @@ def test_get_ipns_name_hash():
     # Assert that it starts with ba
     assert ipns_name_hash.startswith("ba")
 
+# Success from Local Cache
+def test_get_ipns_name_hash_fallback_success():
+    """
+    Test that when the remote CID endpoint is unreachable OR the key isn't found,
+    we successfully fall back to the local cids_cache.json.
+    """
+    # We'll simulate "requests.get" raising a RequestException,
+    # so we go straight to the fallback code.
+    with patch("requests.get") as mock_requests_get:
+        mock_requests_get.side_effect = requests.RequestException("Simulated RequestException")
+
+        # Next, we mock "os.path.exists" to return True, as if cids_cache.json does exist
+        with patch("os.path.exists") as mock_exists:
+            mock_exists.return_value = True
+
+            # Provide a cids_cache.json that DOES have the desired entry
+            fake_json = '{"cpc-precip-conus":"bafkreihashfromlocalfile"}'
+            with patch("builtins.open", mock_open(read_data=fake_json)):
+
+                ipns_name_hash = get_ipns_name_hash("cpc-precip-conus")
+                assert ipns_name_hash == "bafkreihashfromlocalfile"
+
+# Failure When Local Cache Does Not Exist
+def test_get_ipns_name_hash_fallback_no_file():
+    """
+    Test that if requests.get fails and the local fallback file does NOT exist,
+    we raise DatasetNotFoundError.
+    """
+    with patch("requests.get") as mock_requests_get:
+        mock_requests_get.side_effect = requests.RequestException("Simulated RequestException")
+
+        # cids_cache.json does NOT exist
+        with patch("os.path.exists") as mock_exists:
+            mock_exists.return_value = False
+
+            with pytest.raises(DatasetNotFoundError):
+                get_ipns_name_hash("some-nonexistent-key")
+
+# Failure When Local Cache Exists But Missing Key
+def test_get_ipns_name_hash_fallback_key_not_found_in_file():
+    """
+    Even if cids_cache.json exists, if the key is not found, 
+    raise DatasetNotFoundError.
+    """
+    with patch("requests.get") as mock_requests_get:
+        mock_requests_get.side_effect = requests.RequestException("Simulated RequestException")
+
+        with patch("os.path.exists", return_value=True):
+            fake_json = '{"some-other-key":"bafkreihashfromlocalfile"}'
+            with patch("builtins.open", mock_open(read_data=fake_json)):
+                with pytest.raises(DatasetNotFoundError) as exc:
+                    get_ipns_name_hash("cpc-precip-conus")
+
+                assert "Invalid dataset name" in str(exc.value)
 
 def test_list_datasets():
     """

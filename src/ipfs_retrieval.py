@@ -3,6 +3,7 @@ import typing
 import os
 
 import requests
+import json
 import xarray as xr
 from py_hamt import HAMT, IPFSStore
 
@@ -91,12 +92,24 @@ def get_ipns_name_hash(ipns_key_str: str) -> str:
     Returns:
         str: ipfsname hash corresponding to the provided string
     """
-    r = requests.get(CID_ENDPOINT, params={"decoder": "json"})
-    r.raise_for_status()
-    json_cid = r.json()
-    for entry in json_cid:
-        if entry == ipns_key_str:
-            return json_cid[entry]
+
+    # Try to fetch from endpoint first
+    try:
+        r = requests.get(CID_ENDPOINT, params={"decoder": "json"})
+        r.raise_for_status()
+        json_cid = r.json()
+        for entry in json_cid:
+            if entry == ipns_key_str:
+                return json_cid[entry]
+    except (requests.RequestException, KeyError):
+        # Fallback to local cache if endpoint is unreachable
+        cache_file = os.path.join(os.path.dirname(__file__), "cids_cache.json")
+        if os.path.exists(cache_file):
+            with open(cache_file, "r") as f:
+                json_cid = json.load(f)
+                for entry in json_cid:
+                    if entry == ipns_key_str:
+                        return json_cid[entry]
     raise DatasetNotFoundError("Invalid dataset name")
 
 
