@@ -80,6 +80,20 @@ def _resolve_ipns_name_hash(ipns_name_hash: str) -> str:
     return r.json()["Path"].split("/")[-1]
 
 
+def update_cache_if_changed(new_data: dict) -> None:
+    """Update the local cache file only if the new data differs from what is cached."""
+    cache_file = os.path.join(os.path.dirname(__file__), "cids.json")
+    try:
+        with open(cache_file, "r") as f:
+            cached_data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        cached_data = None
+
+    if cached_data != new_data:
+        with open(cache_file, "w") as f:
+            json.dump(new_data, f)
+
+
 def get_ipns_name_hash(ipns_key_str: str) -> str:
     """Find the latest IPNS name hash corresponding to a string (key)
 
@@ -98,6 +112,9 @@ def get_ipns_name_hash(ipns_key_str: str) -> str:
         r = requests.get(CID_ENDPOINT, params={"decoder": "json"})
         r.raise_for_status()
         json_cid = r.json()  # raises JSONDecodeError if endpoint returns malformed JSON
+
+        # Update cache only if there is a change
+        update_cache_if_changed(json_cid)
 
         for entry in json_cid:
             if entry == ipns_key_str:
@@ -212,6 +229,9 @@ def list_datasets() -> typing.List[str]:
         r = requests.get(CID_ENDPOINT, params={"decoder": "json"})
         r.raise_for_status()
         json_cid = r.json()  # may raise JSONDecodeError if malformed
+
+        # Update the local cache if remote data differs
+        update_cache_if_changed(json_cid)
         return list(json_cid.keys())
 
     except (requests.RequestException, json.JSONDecodeError):

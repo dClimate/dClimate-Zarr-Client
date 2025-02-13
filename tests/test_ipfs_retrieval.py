@@ -1,3 +1,4 @@
+import os
 import datetime
 import json
 import pathlib
@@ -5,7 +6,12 @@ import pathlib
 import pytest
 import requests
 from unittest.mock import patch, mock_open
-from src.ipfs_retrieval import get_ipns_name_hash, DatasetNotFoundError, list_datasets
+from src.ipfs_retrieval import (
+    get_ipns_name_hash,
+    DatasetNotFoundError,
+    list_datasets,
+    update_cache_if_changed,
+)
 
 import src.ipfs_retrieval as ipfs_retrieval
 
@@ -327,3 +333,79 @@ def test_geo_temporal_query():
 #     creation_time = datetime.datetime(2022, 7, 26, 19, 17, 53)
 #     with pytest.raises(NoMetadataFoundError):
 #         ipfs_retrieval.get_dataset_by_ipns_hash(IPNS_NAME_HASH, as_of=creation_time)
+
+
+def get_cache_path():
+    import src.ipfs_retrieval as ipfs_retrieval
+
+    return os.path.join(os.path.dirname(ipfs_retrieval.__file__), "cids.json")
+
+
+def test_update_cache_no_update(monkeypatch):
+    """
+    If the cached data is identical to new data,
+    update_cache_if_changed should not write to the file.
+    """
+    cached_data = {"dataset": "hash1"}
+    new_data = {"dataset": "hash1"}
+    file_path = get_cache_path()
+
+    # Prepare a mock_open that returns the cached data for reading.
+    m = mock_open(read_data=json.dumps(cached_data))
+    monkeypatch.setattr("builtins.open", m)
+
+    update_cache_if_changed(new_data)
+
+    # Since the data hasn't changed, only a read call should occur.
+    # (i.e. open() should be called once in "r" mode.)
+    assert m.call_count == 1
+    m.assert_called_with(file_path, "r")
+
+
+def test_update_cache_update(monkeypatch):
+    """
+    If the cached data differs from new data,
+    update_cache_if_changed should update (write) the cache file.
+    """
+    cached_data = {"dataset": "hash1"}
+    new_data = {"dataset": "hash2"}
+    file_path = get_cache_path()
+
+    # Prepare a mock_open with the initial cached data.
+    m = mock_open(read_data=json.dumps(cached_data))
+    monkeypatch.setattr("builtins.open", m)
+
+    update_cache_if_changed(new_data)
+
+    # There should be two calls: one to read and one to write.
+    assert m.call_count == 2
+
+    calls = m.call_args_list
+    # First call: reading the file
+    assert calls[0][0] == (file_path, "r")
+    # Second call: writing the new data
+    assert calls[1][0] == (file_path, "w")
+
+
+def test_update_cache_file_not_found(monkeypatch):
+    """
+    If the cache file doesn't exist (i.e. FileNotFoundError is raised during reading),
+    update_cache_if_changed should write the new data.
+    """
+    new_data = {"dataset": "hash2"}
+    file_path = get_cache_path()
+
+    # Create a mock_open whose first call (read) raises FileNotFoundError,
+    # and whose second call (write) succeeds.
+    m = mock_open()
+    m.side_effect = [FileNotFoundError, m.return_value]
+    monkeypatch.setattr("builtins.open", m)
+
+    update_cache_if_changed(new_data)
+
+    # There should be two calls: the first attempt (reading) fails, and then writing occurs.
+    assert m.call_count == 2
+
+    calls = m.call_args_list
+    assert calls[0][0] == (file_path, "r")
+    assert calls[1][0] == (file_path, "w")
