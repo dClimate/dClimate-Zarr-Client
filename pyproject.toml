@@ -32,21 +32,9 @@ dependencies = [
 [project.urls]
 Homepage = "https://dclimate.net/"
 
-[tool.black]
-line-length = 119
-
 [project.optional-dependencies]
 testing = ["pytest", "pytest-cov", "pytest-mock"]
-dev = ["black", "flake8", "flake8-pyproject", "nox"]
-
-[tool.flake8]
-# flake8 and black disagree on E203 and W503
-ignore = "E203 W503"
-exclude = ".nox"
-max-line-length = 120
+dev = ["nox"]
 
 [tool.uv]
-dev-dependencies = [
-    "pre-commit>=4.1.0",
-    "ruff>=0.9.5",
-]
+dev-dependencies = ["pre-commit>=4.1.0", "ruff>=0.9.5"]
