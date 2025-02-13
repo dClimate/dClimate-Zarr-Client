@@ -409,7 +409,7 @@ requires-dist = [
     { name = "nox", marker = "extra == 'dev'" },
     { name = "numpy", specifier = ">=2.1.3" },
     { name = "pandas" },
-    { name = "py-hamt", git = "https://github.com/dClimate/py-hamt?rev=v.2.0.4" },
+    { name = "py-hamt", git = "https://github.com/dClimate/py-hamt?rev=v2.0.4" },
     { name = "pyarrow" },
     { name = "pycryptodome", specifier = ">=3.21.0" },
     { name = "pytest", marker = "extra == 'testing'" },
@@ -931,7 +931,7 @@ wheels = [
 [[package]]
 name = "py-hamt"
 version = "2.0.4"
-source = { git = "https://github.com/dClimate/py-hamt?rev=v.2.0.4#76deec0aa553a3f7a3bb860910a6cd0686d0bdf1" }
+source = { git = "https://github.com/dClimate/py-hamt?rev=v2.0.4#76deec0aa553a3f7a3bb860910a6cd0686d0bdf1" }
 dependencies = [
     { name = "dag-cbor" },
     { name = "msgspec" },
