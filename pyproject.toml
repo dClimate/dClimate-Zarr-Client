@@ -27,6 +27,7 @@ dependencies = [
     "s3fs",
     "shapely",
     "scipy",
+    "pycryptodome>=3.21.0",
 ]
 
 [project.urls]
