@@ -19,7 +19,7 @@ dependencies = [
     "rioxarray",
     "zarr==2.18.3",
     "numpy>=2.1.3",
-    "py_hamt @ git+https://github.com/dClimate/py-hamt@2.0.4",
+    "py_hamt @ git+https://github.com/dClimate/py-hamt@v2.0.4",
     "requests",
     "pyarrow",
     "geopandas",
