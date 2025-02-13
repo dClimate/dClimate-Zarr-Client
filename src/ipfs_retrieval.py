@@ -197,7 +197,10 @@ def list_datasets() -> typing.List[str]:
     Returns:
         typing.List[str]: List of available datasets' keys
     """
-    r = requests.get(CID_ENDPOINT, params={"decoder": "json"})
-    r.raise_for_status()
-    json_cid = r.json()
-    return list(json_cid.keys())
+    try:
+        r = requests.get(CID_ENDPOINT, params={"decoder": "json"})
+        r.raise_for_status()
+        json_cid = r.json()
+        return list(json_cid.keys())
+    except requests.RequestException as e:
+        raise RuntimeError(f"Failed to fetch dataset list: {str(e)}")
