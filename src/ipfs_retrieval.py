@@ -93,23 +93,33 @@ def get_ipns_name_hash(ipns_key_str: str) -> str:
         str: ipfsname hash corresponding to the provided string
     """
 
-    # Try to fetch from endpoint first
     try:
+        # 1) Try to fetch from endpoint
         r = requests.get(CID_ENDPOINT, params={"decoder": "json"})
         r.raise_for_status()
-        json_cid = r.json()
+        json_cid = r.json()  # raises JSONDecodeError if endpoint returns malformed JSON
+
         for entry in json_cid:
             if entry == ipns_key_str:
                 return json_cid[entry]
-    except (requests.RequestException, KeyError):
-        # Fallback to local cache if endpoint is unreachable
-        cache_file = os.path.join(os.path.dirname(__file__), "cids_cache.json")
+
+    except (requests.RequestException, KeyError, json.JSONDecodeError):
+        # 2) If remote fails or is malformed, try local fallback
+        cache_file = os.path.join(os.path.dirname(__file__), "cids.json")
         if os.path.exists(cache_file):
-            with open(cache_file, "r") as f:
-                json_cid = json.load(f)
+            try:
+                with open(cache_file, "r") as f:
+                    json_cid = json.load(
+                        f
+                    )  # <-- can raise JSONDecodeError if file is empty/corrupt
                 for entry in json_cid:
                     if entry == ipns_key_str:
                         return json_cid[entry]
+            except (KeyError, json.JSONDecodeError):
+                # We tried local, but it’s also invalid (bad JSON or missing key)
+                raise DatasetNotFoundError("Invalid dataset name")
+
+    # 3) If we get here, local file either doesn't exist or didn't have the key
     raise DatasetNotFoundError("Invalid dataset name")
 
 
@@ -197,10 +207,26 @@ def list_datasets() -> typing.List[str]:
     Returns:
         typing.List[str]: List of available datasets' keys
     """
+    # Try to fetch from endpoint first
     try:
         r = requests.get(CID_ENDPOINT, params={"decoder": "json"})
         r.raise_for_status()
-        json_cid = r.json()
+        json_cid = r.json()  # may raise JSONDecodeError if malformed
         return list(json_cid.keys())
-    except requests.RequestException as e:
-        raise RuntimeError(f"Failed to fetch dataset list: {str(e)}")
+
+    except (requests.RequestException, json.JSONDecodeError):
+        # Fallback to local cache if endpoint is unreachable or JSON is malformed
+        cache_file = os.path.join(os.path.dirname(__file__), "cids.json")
+        if os.path.exists(cache_file):
+            try:
+                with open(cache_file, "r") as f:
+                    json_cid = json.load(f)  # can raise JSONDecodeError
+                return list(json_cid.keys())
+            except json.JSONDecodeError:
+                # local file is corrupt or empty
+                raise RuntimeError(
+                    "Failed to retrieve dataset list from endpoint or local cache."
+                )
+
+    # If both the endpoint and local file fail, raise an error
+    raise RuntimeError("Failed to retrieve dataset list from endpoint or local cache.")

@@ -5,7 +5,7 @@ import pathlib
 import pytest
 import requests
 from unittest.mock import patch, mock_open
-from src.ipfs_retrieval import get_ipns_name_hash, DatasetNotFoundError
+from src.ipfs_retrieval import get_ipns_name_hash, DatasetNotFoundError, list_datasets
 
 import src.ipfs_retrieval as ipfs_retrieval
 
@@ -126,6 +126,78 @@ def test_get_ipns_name_hash_fallback_key_not_found_in_file():
                 assert "Invalid dataset name" in str(exc.value)
 
 
+def test_get_ipns_name_hash_endpoint_missing_key():
+    """
+    Test the case where the endpoint is reachable, but the JSON
+    does NOT contain the requested key. Ensure it falls back to local cache.
+    If the local cache also doesn't have the key, raise DatasetNotFoundError.
+    """
+    # Mock a valid endpoint JSON that doesn't contain the desired key
+    endpoint_data = {"some-other-key": "bafy-other"}
+    with patch("requests.get") as mock_requests_get:
+        mock_requests_get.return_value.json.return_value = endpoint_data
+        mock_requests_get.return_value.raise_for_status.return_value = None
+
+        # Also mock local file to not have the key
+        with patch("os.path.exists", return_value=True):
+            fake_json = '{"still-some-other-key":"bafkrei-another"}'
+            with patch("builtins.open", mock_open(read_data=fake_json)):
+                with pytest.raises(DatasetNotFoundError) as exc:
+                    get_ipns_name_hash("cpc-precip-conus")
+                assert "Invalid dataset name" in str(exc.value)
+
+
+def test_get_ipns_name_hash_endpoint_malformed_json():
+    """
+    Test the case where the endpoint returns malformed JSON,
+    triggering a JSONDecodeError. We should then fall back to local cache.
+    """
+    with patch("requests.get") as mock_requests_get:
+        # Simulate valid status but invalid JSON content
+        mock_requests_get.return_value.text = "INVALID JSON!!"
+        mock_requests_get.return_value.raise_for_status.return_value = None
+        mock_requests_get.return_value.json.side_effect = json.JSONDecodeError(
+            "Expecting value", "doc", 0
+        )
+
+        # Provide a valid local cache to ensure fallback works
+        with patch("os.path.exists", return_value=True):
+            fake_json = '{"cpc-precip-conus":"bafkreihashfromlocalfile"}'
+            with patch("builtins.open", mock_open(read_data=fake_json)):
+                ipns_name_hash = get_ipns_name_hash("cpc-precip-conus")
+                assert ipns_name_hash == "bafkreihashfromlocalfile"
+
+
+def test_get_ipns_name_hash_local_cache_malformed_json():
+    """
+    Test that if requests.get fails AND the local cache is malformed JSON,
+    we raise DatasetNotFoundError.
+    """
+    with patch("requests.get") as mock_requests_get:
+        mock_requests_get.side_effect = requests.RequestException("Simulated error")
+
+        with patch("os.path.exists", return_value=True):
+            # Local file is present but has invalid JSON
+            with patch("builtins.open", mock_open(read_data="INVALID JSON!!")):
+                with pytest.raises(DatasetNotFoundError):
+                    get_ipns_name_hash("cpc-precip-conus")
+
+
+def test_get_ipns_name_hash_local_cache_empty():
+    """
+    Test that if requests.get fails AND the local cache file is empty,
+    we raise DatasetNotFoundError (because there's no valid data).
+    """
+    with patch("requests.get") as mock_requests_get:
+        mock_requests_get.side_effect = requests.RequestException("Simulated error")
+
+        with patch("os.path.exists", return_value=True):
+            # Local file is present but empty
+            with patch("builtins.open", mock_open(read_data="")):
+                with pytest.raises(DatasetNotFoundError):
+                    get_ipns_name_hash("cpc-precip-conus")
+
+
 def test_list_datasets():
     """
     Test that `list_datasets` returns a list of dataset keys
@@ -133,6 +205,87 @@ def test_list_datasets():
     datasets = ipfs_retrieval.list_datasets()
     assert len(datasets) == 3
     assert "cpc-precip-conus" in datasets
+
+
+def test_list_datasets_fallback_success():
+    """
+    Test that if the endpoint is unreachable or fails,
+    list_datasets() returns keys from the local cache.
+    """
+    with patch("requests.get") as mock_requests_get:
+        mock_requests_get.side_effect = requests.RequestException("Simulated error")
+
+        with patch("os.path.exists", return_value=True):
+            fake_json = '{"cpc-precip-conus":"bafy-hash","other-dataset":"bafy-other"}'
+            with patch("builtins.open", mock_open(read_data=fake_json)):
+                datasets = list_datasets()
+                assert "cpc-precip-conus" in datasets
+                assert "other-dataset" in datasets
+
+
+def test_list_datasets_endpoint_malformed_json():
+    """
+    Test that if the endpoint returns invalid JSON,
+    list_datasets() attempts fallback.
+    """
+    with patch("requests.get") as mock_requests_get:
+        mock_requests_get.return_value.text = "INVALID JSON!!"
+        mock_requests_get.return_value.raise_for_status.return_value = None
+        mock_requests_get.return_value.json.side_effect = json.JSONDecodeError(
+            "Expecting value", "doc", 0
+        )
+
+        # Provide valid local cache
+        with patch("os.path.exists", return_value=True):
+            fake_json = '{"ds1":"bafy1","ds2":"bafy2"}'
+            with patch("builtins.open", mock_open(read_data=fake_json)):
+                datasets = list_datasets()
+                assert datasets == ["ds1", "ds2"]
+
+
+def test_list_datasets_no_fallback_file():
+    """
+    Test that if the endpoint fails AND no local cache file is found,
+    list_datasets() raises RuntimeError.
+    """
+    with patch("requests.get") as mock_requests_get:
+        mock_requests_get.side_effect = requests.RequestException("Simulated error")
+
+        with patch("os.path.exists", return_value=False):
+            with pytest.raises(RuntimeError) as exc:
+                list_datasets()
+            assert "Failed to retrieve dataset list" in str(exc.value)
+
+
+def test_list_datasets_local_cache_malformed_json():
+    """
+    Test that if the endpoint fails AND local cache file has malformed JSON,
+    list_datasets() raises RuntimeError because it cannot parse the local file.
+    """
+    with patch("requests.get") as mock_requests_get:
+        mock_requests_get.side_effect = requests.RequestException("Simulated error")
+
+        with patch("os.path.exists", return_value=True):
+            # Malformed JSON
+            with patch("builtins.open", mock_open(read_data="INVALID JSON")):
+                with pytest.raises(RuntimeError) as exc:
+                    list_datasets()
+                assert "Failed to retrieve dataset list" in str(exc.value)
+
+
+def test_list_datasets_local_cache_empty():
+    """
+    Test that if the endpoint fails AND local cache file is empty,
+    list_datasets() raises RuntimeError (no data to parse).
+    """
+    with patch("requests.get") as mock_requests_get:
+        mock_requests_get.side_effect = requests.RequestException("Simulated error")
+
+        with patch("os.path.exists", return_value=True):
+            with patch("builtins.open", mock_open(read_data="")):
+                with pytest.raises(RuntimeError) as exc:
+                    list_datasets()
+                assert "Failed to retrieve dataset list" in str(exc.value)
 
 
 def test_geo_temporal_query():
