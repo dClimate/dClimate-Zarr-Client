@@ -147,7 +147,7 @@ def test_upload_then_read(random_zarr_dataset: tuple[str, xr.Dataset]):
     loaded_failure = xr.open_zarr(store=hamt1_read)
     # Accessing data should raise an exception since we don't have the correct encryption key
     with pytest.raises(Exception):
-        loaded_failure["temp"].values
+        _ = loaded_failure["temp"].values
 
     # Check that you can still read the precip since it was not encrypted
     assert loaded_failure["precip"].values[0][0][0]

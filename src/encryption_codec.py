@@ -7,7 +7,6 @@ from numcodecs.abc import Codec
 class EncryptionCodec(Codec):
     codec_id = "xchacha20poly1305"
     _encryption_key = None
-    _encoded_header = None
 
     def __init__(self, header: str):
         self.header = header
