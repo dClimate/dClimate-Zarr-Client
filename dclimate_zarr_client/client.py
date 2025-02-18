@@ -17,7 +17,7 @@ from .s3_retrieval import get_dataset_from_s3
 def load_ipns(
     dataset_name: str,
     as_of: typing.Optional[datetime.datetime] = None,
-    gateway_uri: typing.Optional[str] = None,
+    gateway_uri: str | None = None,
 ) -> GeotemporalData:
     """
     Load a Geotemporal dataset from IPLD. Only valid for Python versions >= 3.10
@@ -62,7 +62,7 @@ def geo_temporal_query(
     source: typing.Literal["ipfs", "s3"] = "ipfs",
     bucket_name: str = None,
     var_name: str = None,
-    gateway_uri: typing.Optional[str] = None,
+    gateway_uri: str | None = None,
     forecast_reference_time: str = None,
     point_kwargs: dict = None,
     circle_kwargs: dict = None,

@@ -6,18 +6,18 @@ import pathlib
 import pytest
 import requests
 from unittest.mock import patch, mock_open
-from src.ipfs_retrieval import (
+from dclimate_zarr_client.ipfs_retrieval import (
     get_ipns_name_hash,
     DatasetNotFoundError,
     list_datasets,
     update_cache_if_changed,
 )
 
-import src.ipfs_retrieval as ipfs_retrieval
+import dclimate_zarr_client.ipfs_retrieval as ipfs_retrieval
 
 # import xarray as xr
 # import zarr
-from src.client import geo_temporal_query
+from dclimate_zarr_client.client import geo_temporal_query
 
 IPNS_NAME_HASH = "k2k4r8niyotlqqqvqoh7jr4gp6zp0b0975k88zmak151chv87w2p11qz"
 
@@ -47,15 +47,15 @@ def default_session_fixture(module_mocker):
     Patch metadata and Zarr retrieval functions in this test
     """
     module_mocker.patch(
-        "src.ipfs_retrieval._get_single_metadata",
+        "dclimate_zarr_client.ipfs_retrieval._get_single_metadata",
         patched_get_single_metadata,
     )
     module_mocker.patch(
-        "src.ipfs_retrieval._resolve_ipns_name_hash",
+        "dclimate_zarr_client.ipfs_retrieval._resolve_ipns_name_hash",
         patched_resolve_ipns_name_hash,
     )
     # module_mocker.patch(
-    #     "src.ipfs_retrieval.get_dataset_by_ipfs_hash",
+    #     "dclimate_zarr_client.ipfs_retrieval.get_dataset_by_ipfs_hash",
     #     patched_get_dataset_by_ipfs_hash,
     # )
 
@@ -336,7 +336,7 @@ def test_geo_temporal_query():
 
 
 def get_cache_path():
-    import src.ipfs_retrieval as ipfs_retrieval
+    import dclimate_zarr_client.ipfs_retrieval as ipfs_retrieval
 
     return os.path.join(os.path.dirname(ipfs_retrieval.__file__), "cids.json")
 

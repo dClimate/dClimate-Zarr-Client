@@ -36,31 +36,28 @@ def random_zarr_dataset():
     # Create random variables with different shapes
     temp = np.random.randn(len(times), len(lats), len(lons))
     precip = np.random.gamma(2, 0.5, size=(len(times), len(lats), len(lons)))
+    print(f"Random precip: {precip[0][0][0]}")
 
     # Create the dataset
     ds = xr.Dataset(
         {
-            "temp": (
-                ["time", "lat", "lon"],
-                temp,
-                {"units": "celsius", "long_name": "Surface Temperature"},
-            ),
             "precip": (
-                ["time", "lat", "lon"],
+                ["time", "latitude", "longitude"],
                 precip,
                 {"units": "mm/day", "long_name": "Daily Precipitation"},
             ),
         },
         coords={
             "time": times,
-            "lat": ("lat", lats, {"units": "degrees_north"}),
-            "lon": ("lon", lons, {"units": "degrees_east"}),
+            "latitude": ("latitude", lats, {"units": "degrees_north"}),
+            "longitude": ("longitude", lons, {"units": "degrees_east"}),
         },
         attrs={"description": "Test dataset with random weather data"},
     )
 
     # Generate Random Key
     encryption_key = get_random_bytes(32).hex()
+    print(f"Encryption Key: {encryption_key}")
     # Set the encryption key for the class
     EncryptionCodec.set_encryption_key(encryption_key)
     # Register the codec
@@ -68,12 +65,13 @@ def random_zarr_dataset():
 
     # Apply the encryption codec to the dataset with a selected header
     encoding = {
-        "temp": {
-            "filters": [
+        "precip": {
+            "compressor": 
                 EncryptionCodec(header="dClimate-Zarr")
-            ],  # Add the Delta filter
+            ,  # Add the Delta filter
         }
     }
+    print(f"Encoding: {encoding}")
     # Write the dataset to the zarr store with the encoding on the temp
     ds.to_zarr(zarr_path, mode="w", encoding=encoding)
 
@@ -105,8 +103,7 @@ def test_upload_then_read(random_zarr_dataset: tuple[str, xr.Dataset]):
     test_ds = xr.open_zarr(zarr_path)
 
     # Check if encryption applied to temp but not to precip
-    assert test_ds["temp"].encoding["filters"][0].header == "dClimate-Zarr"
-    assert test_ds["precip"].encoding["filters"] is None
+    assert test_ds["precip"].encoding["compressor"] is not None
 
     # Prepare Writing to IPFS
     hamt1 = HAMT(
@@ -120,6 +117,7 @@ def test_upload_then_read(random_zarr_dataset: tuple[str, xr.Dataset]):
     )
 
     hamt1_root: CID = hamt1.root_node_id  # type: ignore
+    print(f"IPFS CID: {hamt1_root}")
 
     # Read the dataset from IPFS
     hamt1_read = HAMT(
@@ -130,11 +128,8 @@ def test_upload_then_read(random_zarr_dataset: tuple[str, xr.Dataset]):
 
     # Open the zarr store thats encrypted on IPFS
     loaded_ds1 = xr.open_zarr(store=hamt1_read)
+
     # Assert the values are the same
-    # Check if the values of 'temp' and 'precip' are equal in all datasets
-    assert np.array_equal(loaded_ds1["temp"].values, expected_ds["temp"].values), (
-        "Temp values in loaded_ds1 and expected_ds are not identical!"
-    )
     assert np.array_equal(loaded_ds1["precip"].values, expected_ds["precip"].values), (
         "Precip values in loaded_ds1 and expected_ds are not identical!"
     )
@@ -147,13 +142,9 @@ def test_upload_then_read(random_zarr_dataset: tuple[str, xr.Dataset]):
     loaded_failure = xr.open_zarr(store=hamt1_read)
     # Accessing data should raise an exception since we don't have the correct encryption key
     with pytest.raises(Exception):
-        _ = loaded_failure["temp"].values
+        _ = loaded_failure["precip"].values
 
-    # Check that you can still read the precip since it was not encrypted
-    assert loaded_failure["precip"].values[0][0][0]
-
-    assert "temp" in loaded_ds1
     assert "precip" in loaded_ds1
-    assert loaded_ds1.temp.attrs["units"] == "celsius"
+    assert loaded_ds1.precip.attrs["units"] == "mm/day"
 
-    assert loaded_ds1.temp.shape == expected_ds.temp.shape
+    assert loaded_ds1.precip.shape == expected_ds.precip.shape

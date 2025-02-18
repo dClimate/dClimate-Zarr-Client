@@ -11,7 +11,7 @@ from .dclimate_zarr_errors import DatasetNotFoundError, NoMetadataFoundError
 
 DEFAULT_HOST = "http://127.0.0.1:5001/api/v0"
 VALID_TIME_SPANS = ["daily", "hourly", "weekly", "quarterly"]
-CID_ENDPOINT = "https://dclimate.github.io/dclimate-data-cids/cids.json"
+CID_ENDPOINT = "https://raw.githubusercontent.com/dClimate/dclimate-data-cids/refs/heads/main/cids.json"
 
 
 def _get_host(uri: str = "/api/v0"):
@@ -182,7 +182,7 @@ def _get_relevant_metadata(ipfs_head_hash: str, as_of: datetime.datetime) -> dic
 def get_dataset_by_ipns_hash(
     ipns_name_hash: str,
     as_of: typing.Optional[datetime.datetime] = None,
-    gateway_uri: typing.Optional[str] = None,
+    gateway_uri: str | None = None,
 ) -> xr.Dataset:
     """Gets xarray dataset using fixed ipns name hash
 

@@ -4,13 +4,13 @@ import pathlib
 
 import pytest
 
-from src.dclimate_zarr_errors import (
+from dclimate_zarr_client.dclimate_zarr_errors import (
     BucketNotFoundError,
     PathNotFoundError,
     ZarrClientError,
 )
 
-from src.zarr_metadata import (
+from dclimate_zarr_client.zarr_metadata import (
     get_standard_collections,
     get_forecast_collections,
     get_collection_metadata,
@@ -27,7 +27,7 @@ class TestZarrMetadata:
     @pytest.fixture()
     def s3_fs(self, mocker):
         s3fs_mock = mocker.Mock()
-        mocker.patch("src.zarr_metadata.get_s3_fs", return_value=s3fs_mock)
+        mocker.patch("dclimate_zarr_client.zarr_metadata.get_s3_fs", return_value=s3fs_mock)
         return s3fs_mock
 
     class TestGetCollectionsFunction:
@@ -46,7 +46,7 @@ class TestZarrMetadata:
             self, mocker
         ):
             mocker.patch(
-                "src.zarr_metadata.get_catalog_metadata",
+                "dclimate_zarr_client.zarr_metadata.get_catalog_metadata",
                 return_value=json.loads(open(METADATA / "Data Catalog.json").read()),
             )
             bucket_name = "zarr-dev"
@@ -58,7 +58,7 @@ class TestZarrMetadata:
             self, mocker
         ):
             mocker.patch(
-                "src.zarr_metadata.get_catalog_metadata",
+                "dclimate_zarr_client.zarr_metadata.get_catalog_metadata",
                 return_value=json.loads(open(METADATA / "Data Catalog.json").read()),
             )
             bucket_name = "zarr-dev"
@@ -70,7 +70,7 @@ class TestZarrMetadata:
             self, mocker, s3_fs
         ):
             mocker.patch(
-                "src.zarr_metadata.get_catalog_metadata",
+                "dclimate_zarr_client.zarr_metadata.get_catalog_metadata",
                 return_value=json.loads(
                     open(METADATA / "Empty Data Catalog.json").read()
                 ),
