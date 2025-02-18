@@ -40,6 +40,10 @@ class EncryptionCodec(Codec):
         cipher = ChaCha20_Poly1305.new(key=self._encryption_key, nonce=nonce)
         cipher.update(self._encoded_header)
         plaintext = cipher.decrypt_and_verify(ciphertext, tag)
+        if out is not None:
+            outbuf = io.BytesIO(plaintext)
+            outbuf.readinto(out)
+            return out
         return plaintext
 
     @classmethod
