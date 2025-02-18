@@ -27,7 +27,9 @@ class TestZarrMetadata:
     @pytest.fixture()
     def s3_fs(self, mocker):
         s3fs_mock = mocker.Mock()
-        mocker.patch("dclimate_zarr_client.zarr_metadata.get_s3_fs", return_value=s3fs_mock)
+        mocker.patch(
+            "dclimate_zarr_client.zarr_metadata.get_s3_fs", return_value=s3fs_mock
+        )
         return s3fs_mock
 
     class TestGetCollectionsFunction:

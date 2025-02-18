@@ -11,7 +11,9 @@ class TestS3Retrieval:
     @pytest.fixture
     def fake_s3fs(self, mocker):
         fake_s3fs = mocker.Mock()
-        mocker.patch("dclimate_zarr_client.s3_retrieval.get_s3_fs", return_value=fake_s3fs)
+        mocker.patch(
+            "dclimate_zarr_client.s3_retrieval.get_s3_fs", return_value=fake_s3fs
+        )
         return fake_s3fs
 
     class TestGetDataSetFromS3Function:
