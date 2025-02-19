@@ -74,20 +74,29 @@ ds = xr.open_dataset(ds_bytes)
 
 > More examples can be found at [dClimate Jupyter Notebooks](https://github.com/dClimate/jupyter-notebooks/tree/main/notebooks). To run your own IPFS gateway follow the instructions for [installing ipfs](https://docs.ipfs.tech/install/command-line/#install-official-binary-distributions). For additional assistance find us on [Discord](https://discord.com/invite/bYWVdNDMpe ), if you are an organization or business reach out to us at community at dclimate dot net.
 
-## Install
+## Create and activate a virtual environment:
+
+``` shell
+uv venv myenv
+source myenv/bin/activate  # macOS/Linux
+.\myenv\Scripts\activate   # Windows
+```
+
+## Install Dependencies
 
 ```shell
-uv sync
+uv sync requirements.txt
 ```
 
 ## Run tests for your local environment
 ```shell
-uv run pytest tests/
+uv run pytest tests/ 
 ```
 
-## Run all acceptance tests
+## Use Coverage
+
 ```shell
-uv run nox
+uv run pytest --cov=dclimate_zarr_client tests/ --cov-report=xml
 ```
 
 ## Environment requirements

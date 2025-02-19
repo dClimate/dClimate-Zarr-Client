@@ -110,7 +110,7 @@ def test_upload_then_read(random_zarr_dataset: tuple[str, xr.Dataset]):
 
     # Prepare Writing to IPFS
     hamt1 = HAMT(
-        store=IPFSStore(pin_on_add=False),
+        store=IPFSStore(),
     )
 
     # Reusing the same encryption key as its still stored in the class in numcodecs
