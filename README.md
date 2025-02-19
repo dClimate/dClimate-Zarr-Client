@@ -1,6 +1,6 @@
 [![codecov](https://codecov.io/gh/dClimate/dClimate-Zarr-Client/graph/badge.svg?token=AovaMO6DX5)](https://codecov.io/gh/dClimate/dClimate-Zarr-Client)
 # dClimate-Zarr-Client
-Retrieve dclimate GISzarrs stored on IPLD.
+Retrieve dclimate GIS zarrs stored on IPLD.
 
 Uses [py-hamt](https://github.com/dClimate/py-hamt) to actually access zarrs, then provides
 filtering and aggregation functionality to these zarrs using `xarray` native methods wherever possible.
