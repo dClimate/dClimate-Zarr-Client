@@ -864,12 +864,13 @@ wheels = [
 
 [[distribution]]
 name = "py-hamt"
-version = "2.0.4"
-source = { git = "https://github.com/dClimate/py-hamt?rev=v2.0.4#76deec0aa553a3f7a3bb860910a6cd0686d0bdf1" }
+version = "2.2.0"
+source = { git = "https://github.com/dClimate/py-hamt#70dc3d385011cf1d1f184302c2394ed33a892fff" }
 dependencies = [
     { name = "dag-cbor" },
     { name = "msgspec" },
     { name = "multiformats", extra = ["full"] },
+    { name = "pycryptodome" },
     { name = "requests" },
 ]
 
