@@ -319,10 +319,7 @@ class GeotemporalData:
         # If the polygon(s) are collectively smaller than the size of one grid cell,
         # clipping will return no data In this case return data from the grid cell nearest
         # to the center of the polygon
-        if (
-            self.data.attrs["spatial resolution"] ** 2
-            > polygons_mask.union_all().area
-        ):
+        if self.data.attrs["spatial resolution"] ** 2 > polygons_mask.union_all().area:
             return self.reduce_polygon_to_point(polygons_mask)
 
         # return clipped data as normal if the polygons are large enough

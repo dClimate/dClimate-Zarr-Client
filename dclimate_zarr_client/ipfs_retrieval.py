@@ -118,7 +118,7 @@ def get_ipns_name_hash(ipns_key_str: str) -> str:
             if entry == ipns_key_str:
                 return json_cid[entry]
 
-    except (requests.RequestException, KeyError, json.JSONDecodeError) as e:
+    except (requests.RequestException, KeyError, json.JSONDecodeError):
         # 2) If remote fails or is malformed, try local fallback
         cache_file = os.path.join(os.path.dirname(__file__), "cids.json")
         if os.path.exists(cache_file):
@@ -232,7 +232,7 @@ def list_datasets() -> typing.List[str]:
         update_cache_if_changed(json_cid)
         return list(json_cid.keys())
 
-    except (requests.RequestException, json.JSONDecodeError) as e:
+    except (requests.RequestException, json.JSONDecodeError):
         # Fallback to local cache if endpoint is unreachable or JSON is malformed
         cache_file = os.path.join(os.path.dirname(__file__), "cids.json")
         if os.path.exists(cache_file):
@@ -247,4 +247,6 @@ def list_datasets() -> typing.List[str]:
                 ) from err
 
     # If both the endpoint and local file fail, raise an error
-    raise RuntimeError("Failed to retrieve dataset list from endpoint or local cache.") from None
+    raise RuntimeError(
+        "Failed to retrieve dataset list from endpoint or local cache."
+    ) from None
