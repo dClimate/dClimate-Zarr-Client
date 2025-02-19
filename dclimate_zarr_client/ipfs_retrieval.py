@@ -40,7 +40,7 @@ def _get_single_metadata(ipfs_hash: str) -> dict:
         dict: dict of metadata for hash
     """
 
-    r = requests.post(f"{_get_host()}/dag/get", params={"arg": ipfs_hash})
+    r = requests.get(f"{_get_host()}/ipfs/{ipfs_hash}")
     r.raise_for_status()
     return r.json()
 
@@ -73,8 +73,8 @@ def _resolve_ipns_name_hash(ipns_name_hash: str) -> str:
     Returns:
         str: ipfs hash corresponding to this ipns name hash
     """
-    r = requests.post(
-        f"{_get_host()}/name/resolve", params={"arg": ipns_name_hash, "offline": True}
+    r = requests.get(
+        f"{_get_host()}/ipns/{ipns_name_hash}", params={"offline": True}
     )
     r.raise_for_status()
     return r.json()["Path"].split("/")[-1]
