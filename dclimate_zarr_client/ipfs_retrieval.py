@@ -118,7 +118,7 @@ def get_ipns_name_hash(ipns_key_str: str) -> str:
             if entry == ipns_key_str:
                 return json_cid[entry]
 
-    except (requests.RequestException, KeyError, json.JSONDecodeError):
+    except (requests.RequestException, KeyError, json.JSONDecodeError) as e:
         # 2) If remote fails or is malformed, try local fallback
         cache_file = os.path.join(os.path.dirname(__file__), "cids.json")
         if os.path.exists(cache_file):
@@ -130,12 +130,12 @@ def get_ipns_name_hash(ipns_key_str: str) -> str:
                 for entry in json_cid:
                     if entry == ipns_key_str:
                         return json_cid[entry]
-            except (KeyError, json.JSONDecodeError):
+            except (KeyError, json.JSONDecodeError) as err:
                 # We tried local, but it’s also invalid (bad JSON or missing key)
-                raise DatasetNotFoundError("Invalid dataset name")
+                raise DatasetNotFoundError("Invalid dataset name") from err
 
     # 3) If we get here, local file either doesn't exist or didn't have the key
-    raise DatasetNotFoundError("Invalid dataset name")
+    raise DatasetNotFoundError("Invalid dataset name") from None
 
 
 def _get_relevant_metadata(ipfs_head_hash: str, as_of: datetime.datetime) -> dict:
@@ -232,7 +232,7 @@ def list_datasets() -> typing.List[str]:
         update_cache_if_changed(json_cid)
         return list(json_cid.keys())
 
-    except (requests.RequestException, json.JSONDecodeError):
+    except (requests.RequestException, json.JSONDecodeError) as e:
         # Fallback to local cache if endpoint is unreachable or JSON is malformed
         cache_file = os.path.join(os.path.dirname(__file__), "cids.json")
         if os.path.exists(cache_file):
@@ -240,11 +240,11 @@ def list_datasets() -> typing.List[str]:
                 with open(cache_file, "r") as f:
                     json_cid = json.load(f)  # can raise JSONDecodeError
                 return list(json_cid.keys())
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as err:
                 # local file is corrupt or empty
                 raise RuntimeError(
                     "Failed to retrieve dataset list from endpoint or local cache."
-                )
+                ) from err
 
     # If both the endpoint and local file fail, raise an error
-    raise RuntimeError("Failed to retrieve dataset list from endpoint or local cache.")
+    raise RuntimeError("Failed to retrieve dataset list from endpoint or local cache.") from None
