@@ -321,7 +321,7 @@ class GeotemporalData:
         # to the center of the polygon
         if (
             self.data.attrs["spatial resolution"] ** 2
-            > polygons_mask.unary_union().area
+            > polygons_mask.union_all().area
         ):
             return self.reduce_polygon_to_point(polygons_mask)
 
