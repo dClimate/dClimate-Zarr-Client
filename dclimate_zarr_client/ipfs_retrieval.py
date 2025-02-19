@@ -73,9 +73,7 @@ def _resolve_ipns_name_hash(ipns_name_hash: str) -> str:
     Returns:
         str: ipfs hash corresponding to this ipns name hash
     """
-    r = requests.get(
-        f"{_get_host()}/ipns/{ipns_name_hash}", params={"offline": True}
-    )
+    r = requests.get(f"{_get_host()}/ipns/{ipns_name_hash}", params={"offline": True})
     r.raise_for_status()
     return r.json()["Path"].split("/")[-1]
 
