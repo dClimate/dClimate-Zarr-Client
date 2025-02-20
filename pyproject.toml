@@ -35,7 +35,4 @@ Homepage = "https://dclimate.net/"
 
 [project.optional-dependencies]
 testing = ["pytest", "pytest-cov", "pytest-mock"]
-dev = []
-
-[tool.uv]
-dev-dependencies = ["pre-commit>=4.1.0", "ruff>=0.9.5"]
+dev = ["pre-commit>=4.1.0", "ruff>=0.9.5"]
