@@ -90,7 +90,7 @@ uv sync requirements.txt
 
 ## Run tests for your local environment
 ```shell
-uv run pytest tests/ 
+uv run pytest tests/
 ```
 
 ## Use Coverage
