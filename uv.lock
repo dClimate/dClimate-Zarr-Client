@@ -367,16 +367,14 @@ dependencies = [
 ]
 
 [distribution.optional-dependencies]
+dev = [
+    { name = "pre-commit" },
+    { name = "ruff" },
+]
 testing = [
     { name = "pytest" },
     { name = "pytest-cov" },
     { name = "pytest-mock" },
-]
-
-[distribution.dev-dependencies]
-dev = [
-    { name = "pre-commit" },
-    { name = "ruff" },
 ]
 
 [[distribution]]
