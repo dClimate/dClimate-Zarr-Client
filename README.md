@@ -85,7 +85,7 @@ source myenv/bin/activate  # macOS/Linux
 ## Install Dependencies
 
 ```shell
-uv sync requirements.txt
+uv sync --extra dev --extra testing
 ```
 
 ## Run tests for your local environment
