@@ -32,7 +32,9 @@ def test_load_ipns(get_ipns_hash, get_dataset_by_ipns_hash, dataset):
     assert data.data is dataset
 
     get_ipns_hash.assert_called_once_with("dataset_name")
-    get_dataset_by_ipns_hash.assert_called_once_with("thehash", as_of=None)
+    get_dataset_by_ipns_hash.assert_called_once_with(
+        "thehash", as_of=None, gateway_uri=None
+    )
 
 
 @unittest.mock.patch("dclimate_zarr_client.ipfs_retrieval.get_dataset_by_ipns_hash")
@@ -45,7 +47,9 @@ def test_load_ipns_with_as_of(get_ipns_hash, get_dataset_by_ipns_hash, dataset):
     assert data.data is dataset
 
     get_ipns_hash.assert_called_once_with("dataset_name")
-    get_dataset_by_ipns_hash.assert_called_once_with("thehash", as_of="as_of")
+    get_dataset_by_ipns_hash.assert_called_once_with(
+        "thehash", as_of="as_of", gateway_uri=None
+    )
 
 
 @unittest.mock.patch("dclimate_zarr_client.client.get_dataset_from_s3")
@@ -66,7 +70,7 @@ def patched_get_ipns_name_hash(ipns_key):
     return "bafyreiglm3xvfcwkjbdqlwg3mc6zgngxuyfj6tkgfb6qobtmlzobpp63sq"
 
 
-def patched_get_dataset_by_ipns_hash(ipfs_hash, as_of):
+def patched_get_dataset_by_ipns_hash(ipfs_hash, as_of, gateway_uri=None):
     """
     Patch ipns dataset function to return a prepared dataset for testing
     """
@@ -120,7 +124,7 @@ def test_geo_temporal_query(polygons_mask, points_mask):
     point = client.geo_temporal_query(
         dataset_name="era5_wind_100m_u-hourly",
         bucket_name="zarr-dev",
-        point_kwargs={"lat": 39.75, "lon": -118.5},
+        point_kwargs={"latitude": 39.75, "longitude": -118.5},
         rolling_agg_kwargs={"window_size": 5, "agg_method": "mean"},
         point_limit=None,
     )
@@ -216,11 +220,13 @@ def test_geo_conflicts():
         client.geo_temporal_query(
             dataset_name="era5_wind_100m_u-hourly",
             bucket_name="zarr-dev",
-            point_kwargs={"lat": 39.75, "lon": -118.5},
+            point_kwargs={"latitude": 39.75, "longitude": -118.5},
             spatial_agg_kwargs={"agg_method": "std"},
         )
     assert multi_exc_info.match("User requested more than one type of geographic query")
-    assert single_exc_info.match("User requested spatial aggregation methods on a single point")
+    assert single_exc_info.match(
+        "User requested spatial aggregation methods on a single point"
+    )
 
 
 def test_geo_forecast_conflicts():
@@ -289,7 +295,7 @@ def test_invalid_export():
         client.geo_temporal_query(
             dataset_name="era5_wind_100m_u-hourly",
             bucket_name="zarr-dev",
-            point_kwargs={"lat": 39.75, "lon": -118.5},
+            point_kwargs={"latitude": 39.75, "longitude": -118.5},
             output_format="GRIB",
         )
 
@@ -316,7 +322,7 @@ def test_no_data_in_selection_error():
             dataset_name="era5_wind_100m_u-hourly",
             bucket_name="zarr-dev",
             time_range=[datetime.datetime(1900, 1, 1), datetime.datetime(1910, 1, 1)],
-            point_kwargs={"lat": 39.75, "lon": -118.5},
+            point_kwargs={"latitude": 39.75, "longitude": -118.5},
         )
 
 
@@ -342,7 +348,9 @@ class TestClient:
                 dims="time",
                 coords={"time": np.arange(5)},
             )
-            lat = xr.DataArray(np.arange(10, 50, 10), dims="lat", coords={"lat": np.arange(10, 50, 10)})
+            lat = xr.DataArray(
+                np.arange(10, 50, 10), dims="lat", coords={"lat": np.arange(10, 50, 10)}
+            )
             lon = xr.DataArray(
                 np.arange(100, 140, 10),
                 dims="lon",
@@ -354,7 +362,7 @@ class TestClient:
                 coords=(time, lat, lon),
             )
 
-            attrs = {"unit of measurement": "mm"}
+            attrs = {"units": "mm"}
             fake_dataset = xr.Dataset({"data_var": data}, attrs=attrs)
             return fake_dataset
 
@@ -363,7 +371,9 @@ class TestClient:
             forecast_reference_time = xr.DataArray(
                 data=pd.date_range("2021-05-05", periods=1),
                 dims="forecast_reference_time",
-                coords={"forecast_reference_time": pd.date_range("2021-05-05", periods=1)},
+                coords={
+                    "forecast_reference_time": pd.date_range("2021-05-05", periods=1)
+                },
             )
             # we add one forecast 3 hours ahead to allow testing of infill behavior (via
             # reindex)
@@ -386,7 +396,9 @@ class TestClient:
                     )
                 },
             )
-            lat = xr.DataArray(np.arange(10, 50, 10), dims="lat", coords={"lat": np.arange(10, 50, 10)})
+            lat = xr.DataArray(
+                np.arange(10, 50, 10), dims="lat", coords={"lat": np.arange(10, 50, 10)}
+            )
             lon = xr.DataArray(
                 np.arange(100, 140, 10),
                 dims="lon",
@@ -398,11 +410,13 @@ class TestClient:
                 coords=(forecast_reference_time, step, lat, lon),
             )
 
-            attrs = {"unit of measurement": "mm"}
+            attrs = {"units": "mm"}
             fake_dataset = xr.Dataset({"data_var": data}, attrs=attrs)
             return fake_dataset
 
-        def test__given_bucket_and_dataset_names__then__fetch_geo_temporal_query_from_S3(self, mocker, fake_dataset):
+        def test__given_bucket_and_dataset_names__then__fetch_geo_temporal_query_from_S3(
+            self, mocker, fake_dataset
+        ):
             dataset_name = "copernicus_ocean_salinity_1p5_meters"
             bucket_name = ("zarr-prod",)
             get_dataset_from_s3_mock = mocker.patch(

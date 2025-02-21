@@ -1,7 +1,8 @@
+[![codecov](https://codecov.io/gh/dClimate/dClimate-Zarr-Client/graph/badge.svg?token=AovaMO6DX5)](https://codecov.io/gh/dClimate/dClimate-Zarr-Client)
 # dClimate-Zarr-Client
-Retrieve zarrs stored on IPLD.
+Retrieve dclimate GIS zarrs stored on IPLD.
 
-Uses [ipldstore](https://github.com/dClimate/ipldstore) to actually access zarrs, then provides
+Uses [py-hamt](https://github.com/dClimate/py-hamt) to actually access zarrs, then provides
 filtering and aggregation functionality to these zarrs using `xarray` native methods wherever possible.
 Filtering and aggregation are packaged into a minimal number of convenience functions optimized for flexbility
 and performance.
@@ -39,51 +40,68 @@ aggregations.
 ### ipfs_retrieval.py
 
 Functions for accessing zarrs over IPFS/IPNS. Functionality includes resolving IPNS keys to IPFS hashes
-based on key names, as well as using `ipldstore` to open the zarrs that those IPFS hashes point to.
+based on key names, as well as using `py-hamt` to open the zarrs that those IPFS hashes point to.
 
 
-##  Usage:
-
-While in virtual environment and at root of repo, run `pip install -e .` to install the package's core functionality.
-To install with extra packages for development and testing, run `pip install -e .\[testing,dev]`. Then you can run python
-code like:
+## Usage
 
 ```python
-# Singleton Function Interface
 from datetime import datetime
 import xarray as xr
 import dclimate_zarr_client as client
+
+# Singleton Function Interface
 ds_name = "era5_wind_100m_u-hourly"
 ds_bytes = client.geo_temporal_query(
     ds_name,
     point_kwargs={"lat": 40, "lon": -120},
     time_range=[datetime(2021, 1, 1), datetime(2022, 12, 31)],
-    output_format="netcdf"
+    output_format="netcdf",
+    # gateway_uri="http://<IP>:<PORT>" # Optionally pass a custom gateway URI (default: http://127.0.0.1:8080) Note: IPFS must be running locally in the default case
 )
 ds = xr.open_dataset(ds_bytes)
 
 # Pythonic Interface
 dataset = client.load_ipns(ds_name)
+# Optionally custom gateway
+# dataset = client.load_ipns(ds_name, gateway_uri="http://<IP>:<PORT>")
 dataset = dataset.point(lat=40, lon=-120)
 dataset = dataset.time_range(datetime(2021, 1, 1), datetime(2022, 12, 31))
 ds_bytes = dataset.to_netcdf()
 
 ds = xr.open_dataset(ds_bytes)
 ```
-## Run tests for your local environment:
-```shell
-cd
-pytest tests
+
+> More examples can be found at [dClimate Jupyter Notebooks](https://github.com/dClimate/jupyter-notebooks/tree/main/notebooks). To run your own IPFS gateway follow the instructions for [installing ipfs](https://docs.ipfs.tech/install/command-line/#install-official-binary-distributions). For additional assistance find us on [Discord](https://discord.com/invite/bYWVdNDMpe ), if you are an organization or business reach out to us at community at dclimate dot net.
+
+## Create and activate a virtual environment:
+
+``` shell
+uv venv myenv
+source myenv/bin/activate  # macOS/Linux
+.\myenv\Scripts\activate   # Windows
 ```
 
-## Run all acceptance tests:
+## Install Dependencies
+
 ```shell
-nox
+uv sync --extra dev --extra testing
 ```
 
-## Environment requirements:
+## Run tests for your local environment
+```shell
+uv run pytest tests/
+```
+
+## Use Coverage
+
+```shell
+uv run pytest --cov=dclimate_zarr_client tests/ --cov-report=xml
+```
+
+## Environment requirements
 
 - Running IPFS daemon
-- Dataset parsed with [gridded-etl-tools](https://github.com/Arbol-Project/gridded-etl-tools/) with name `ds_name`
+- Dataset parsed with [etl-scripts](https://github.com/dClimate/etl-scripts) with name `ds_name`
 - Up-to-date IPNS table (IPNS key for `ds_name` can't be expired).
   If `ipfs name resolve <ipns key>` stalls out, the IPNS key is expired and `publish_metadata` step of ETL must be rerun.

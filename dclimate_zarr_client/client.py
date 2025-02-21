@@ -17,6 +17,7 @@ from .s3_retrieval import get_dataset_from_s3
 def load_ipns(
     dataset_name: str,
     as_of: typing.Optional[datetime.datetime] = None,
+    gateway_uri: str | None = None,
 ) -> GeotemporalData:
     """
     Load a Geotemporal dataset from IPLD. Only valid for Python versions >= 3.10
@@ -33,7 +34,7 @@ def load_ipns(
     from .ipfs_retrieval import get_dataset_by_ipns_hash, get_ipns_name_hash
 
     ipns_name_hash = get_ipns_name_hash(dataset_name)
-    ds = get_dataset_by_ipns_hash(ipns_name_hash, as_of=as_of)
+    ds = get_dataset_by_ipns_hash(ipns_name_hash, as_of=as_of, gateway_uri=gateway_uri)
     return GeotemporalData(ds, dataset_name=dataset_name)
 
 
@@ -61,6 +62,7 @@ def geo_temporal_query(
     source: typing.Literal["ipfs", "s3"] = "ipfs",
     bucket_name: str = None,
     var_name: str = None,
+    gateway_uri: str | None = None,
     forecast_reference_time: str = None,
     point_kwargs: dict = None,
     circle_kwargs: dict = None,
@@ -143,7 +145,8 @@ def geo_temporal_query(
         > 1
     ):
         raise ConflictingGeoRequestError(
-            "User requested more than one type of geographic query, but only one can " "be submitted at a time"
+            "User requested more than one type of geographic query, but only one can "
+            "be submitted at a time"
         )
     if spatial_agg_kwargs and point_kwargs:
         raise ConflictingGeoRequestError(
@@ -158,7 +161,8 @@ def geo_temporal_query(
         )
     if output_format not in ["array", "netcdf"]:
         raise InvalidExportFormatError(
-            "User requested an invalid export format. Only 'array' or 'netcdf' " "permitted."
+            "User requested an invalid export format. Only 'array' or 'netcdf' "
+            "permitted."
         )
 
     # Set defaults to avoid Nones accidentally passed by users causing a TypeError
@@ -167,12 +171,11 @@ def geo_temporal_query(
 
     # Use the provided dataset string to find the dataset via IPNS
     if source == "ipfs":
-        data = load_ipns(dataset_name, as_of=as_of)
+        data = load_ipns(dataset_name, as_of=as_of, gateway_uri=gateway_uri)
     elif source == "s3":
         data = load_s3(dataset_name, bucket_name)
     else:
         raise ValueError("only possible sources are s3 and IPFS")
-
     # If specific variable is requested, use that
     if var_name is not None:
         data = data.use(var_name)

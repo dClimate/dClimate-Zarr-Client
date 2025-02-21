@@ -14,7 +14,8 @@ def get_standard_collections(bucket_name: str) -> typing.List[str]:
     return [
         os.path.splitext(collection["href"])[0].split("collections/")[1]
         for collection in catalog_metadata["links"]
-        if "forecast" not in collection["title"].lower() and "root catalog" not in collection["title"]
+        if "forecast" not in collection["title"].lower()
+        and "root catalog" not in collection["title"]
     ]
 
 
@@ -23,14 +24,17 @@ def get_forecast_collections(bucket_name: str) -> typing.List[str]:
     return [
         os.path.splitext(collection["href"])[0].split("collections/")[1]
         for collection in catalog_metadata["links"]
-        if "forecast" in collection["title"].lower() and "root catalog" not in collection["title"]
+        if "forecast" in collection["title"].lower()
+        and "root catalog" not in collection["title"]
     ]
 
 
 def get_collection_metadata(bucket_name: str, collection_name: str):
     s3 = get_s3_fs()
     _validate_bucket_name(bucket_name)
-    collection_metadata_path = f"{bucket_name}/metadata/collections/{collection_name}.json"
+    collection_metadata_path = (
+        f"{bucket_name}/metadata/collections/{collection_name}.json"
+    )
     _validate_path(collection_metadata_path)
     collection_metadata = s3.cat_file(collection_metadata_path)
     return json.loads(collection_metadata)
@@ -52,7 +56,9 @@ def get_collection_datasets(bucket_name: str, collection_name: str):
         ]
 
     except ValueError:
-        raise ZarrClientError(f"There is an error reading the file: {collection_file_path}")
+        raise ZarrClientError(
+            f"There is an error reading the file: {collection_file_path}"
+        )
 
 
 def get_dataset_metadata(bucket_name: str, dataset_name: str):
@@ -71,7 +77,9 @@ def get_catalog_metadata(bucket_name: str):
     _validate_path(metadata_path)
     metadata_folder_content = s3.ls(metadata_path, detail=False)
     data_catalog_files = [
-        item for item in metadata_folder_content if item.lower().endswith(".json") and "Data Catalog" in item
+        item
+        for item in metadata_folder_content
+        if item.lower().endswith(".json") and "Data Catalog" in item
     ]
     if len(data_catalog_files) > 1:
         raise ZarrClientError("There is more than one Data Catalog object")

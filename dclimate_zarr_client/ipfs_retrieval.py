@@ -3,13 +3,15 @@ import typing
 import os
 
 import requests
+import json
 import xarray as xr
-from ipldstore import get_ipfs_mapper
+from py_hamt import HAMT, IPFSStore
 
 from .dclimate_zarr_errors import DatasetNotFoundError, NoMetadataFoundError
 
 DEFAULT_HOST = "http://127.0.0.1:5001/api/v0"
 VALID_TIME_SPANS = ["daily", "hourly", "weekly", "quarterly"]
+CID_ENDPOINT = "https://raw.githubusercontent.com/dClimate/dclimate-data-cids/refs/heads/main/cids.json"
 
 
 def _get_host(uri: str = "/api/v0"):
@@ -38,7 +40,7 @@ def _get_single_metadata(ipfs_hash: str) -> dict:
         dict: dict of metadata for hash
     """
 
-    r = requests.post(f"{_get_host()}/dag/get", params={"arg": ipfs_hash})
+    r = requests.get(f"{_get_host()}/ipfs/{ipfs_hash}")
     r.raise_for_status()
     return r.json()
 
@@ -54,7 +56,9 @@ def _get_previous_hash_from_metadata(metadata: dict) -> typing.Optional[str]:
     """
     links = metadata["links"]
     try:
-        link_to_previous = [link for link in links if link["rel"] in {"prev", "previous"}][0]
+        link_to_previous = [
+            link for link in links if link["rel"] in {"prev", "previous"}
+        ][0]
     except IndexError:
         return None
     return link_to_previous["metadata href"]["/"]
@@ -69,9 +73,23 @@ def _resolve_ipns_name_hash(ipns_name_hash: str) -> str:
     Returns:
         str: ipfs hash corresponding to this ipns name hash
     """
-    r = requests.post(f"{_get_host()}/name/resolve", params={"arg": ipns_name_hash, "offline": True})
+    r = requests.get(f"{_get_host()}/ipns/{ipns_name_hash}", params={"offline": True})
     r.raise_for_status()
     return r.json()["Path"].split("/")[-1]
+
+
+def update_cache_if_changed(new_data: dict) -> None:
+    """Update the local cache file only if the new data differs from what is cached."""
+    cache_file = os.path.join(os.path.dirname(__file__), "cids.json")
+    try:
+        with open(cache_file, "r") as f:
+            cached_data = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError):
+        cached_data = None
+
+    if cached_data != new_data:
+        with open(cache_file, "w") as f:
+            json.dump(new_data, f)
 
 
 def get_ipns_name_hash(ipns_key_str: str) -> str:
@@ -86,12 +104,38 @@ def get_ipns_name_hash(ipns_key_str: str) -> str:
     Returns:
         str: ipfsname hash corresponding to the provided string
     """
-    r = requests.post(f"{_get_host()}/key/list", params={"decoder": "json"})
-    r.raise_for_status()
-    for entry in r.json()["Keys"]:
-        if entry["Name"] == ipns_key_str:
-            return entry["Id"]
-    raise DatasetNotFoundError("Invalid dataset name")
+
+    try:
+        # 1) Try to fetch from endpoint
+        r = requests.get(CID_ENDPOINT, params={"decoder": "json"})
+        r.raise_for_status()
+        json_cid = r.json()  # raises JSONDecodeError if endpoint returns malformed JSON
+
+        # Update cache only if there is a change
+        update_cache_if_changed(json_cid)
+
+        for entry in json_cid:
+            if entry == ipns_key_str:
+                return json_cid[entry]
+
+    except (requests.RequestException, KeyError, json.JSONDecodeError):
+        # 2) If remote fails or is malformed, try local fallback
+        cache_file = os.path.join(os.path.dirname(__file__), "cids.json")
+        if os.path.exists(cache_file):
+            try:
+                with open(cache_file, "r") as f:
+                    json_cid = json.load(
+                        f
+                    )  # <-- can raise JSONDecodeError if file is empty/corrupt
+                for entry in json_cid:
+                    if entry == ipns_key_str:
+                        return json_cid[entry]
+            except (KeyError, json.JSONDecodeError) as err:
+                # We tried local, but it’s also invalid (bad JSON or missing key)
+                raise DatasetNotFoundError("Invalid dataset name") from err
+
+    # 3) If we get here, local file either doesn't exist or didn't have the key
+    raise DatasetNotFoundError("Invalid dataset name") from None
 
 
 def _get_relevant_metadata(ipfs_head_hash: str, as_of: datetime.datetime) -> dict:
@@ -109,7 +153,9 @@ def _get_relevant_metadata(ipfs_head_hash: str, as_of: datetime.datetime) -> dic
     """
     cur_metadata = _get_single_metadata(ipfs_head_hash)
     while True:
-        time_generated = datetime.datetime.strptime(cur_metadata["properties"]["updated"], "%Y-%m-%dT%H:%M:%SZ")
+        time_generated = datetime.datetime.strptime(
+            cur_metadata["properties"]["updated"], "%Y-%m-%dT%H:%M:%SZ"
+        )
         if time_generated <= as_of:
             return cur_metadata
         prev_hash = _get_previous_hash_from_metadata(cur_metadata)
@@ -118,21 +164,24 @@ def _get_relevant_metadata(ipfs_head_hash: str, as_of: datetime.datetime) -> dic
         cur_metadata = _get_single_metadata(prev_hash)
 
 
-def get_dataset_by_ipfs_hash(ipfs_hash: str) -> xr.Dataset:
-    """Gets xarray dataset using changing ipfs hash
+# def get_dataset_by_ipfs_hash(ipfs_hash: str) -> xr.Dataset:
+#     """Gets xarray dataset using changing ipfs hash
 
-    Args:
-        ipfs_hash (str): ipfs hash that changes between updates
+#     Args:
+#         ipfs_hash (str): ipfs hash that changes between updates
 
-    Returns:
-        xr.Dataset: dataset corresponding to hash
-    """
-    ipfs_mapper = get_ipfs_mapper(host=_get_host(uri=""))
-    ipfs_mapper.set_root(ipfs_hash)
-    return xr.open_zarr(ipfs_mapper, chunks=None)
+#     Returns:
+#         xr.Dataset: dataset corresponding to hash
+#     """
+#     hamt_store = HAMT(store=IPFSStore(), root_node_id=ipfs_hash, read_only=True)
+#     return xr.open_zarr(store=hamt_store, chunks=None)
 
 
-def get_dataset_by_ipns_hash(ipns_name_hash: str, as_of: typing.Optional[datetime.datetime] = None) -> xr.Dataset:
+def get_dataset_by_ipns_hash(
+    ipns_name_hash: str,
+    as_of: typing.Optional[datetime.datetime] = None,
+    gateway_uri: str | None = None,
+) -> xr.Dataset:
     """Gets xarray dataset using fixed ipns name hash
 
     Args:
@@ -143,16 +192,14 @@ def get_dataset_by_ipns_hash(ipns_name_hash: str, as_of: typing.Optional[datetim
     Returns:
         xr.Dataset: dataset corresponding to hash and as_of date
     """
-    ipfs_head_hash = _resolve_ipns_name_hash(ipns_name_hash)
-    if as_of:
-        metadata = _get_relevant_metadata(ipfs_head_hash, as_of=as_of)
-    else:
-        metadata = _get_single_metadata(ipfs_head_hash)
-    try:
-        dataset_hash = get_dataset_by_ipfs_hash(metadata["assets"]["zmetadata"]["href"]["/"])
-    except KeyError:
-        dataset_hash = get_dataset_by_ipfs_hash(metadata["assets"]["analytic"]["href"]["/"])
-    return dataset_hash
+    store_kwargs = {}
+    if gateway_uri:
+        store_kwargs["gateway_uri_stem"] = gateway_uri
+
+    hamt_store = HAMT(
+        store=IPFSStore(**store_kwargs), root_node_id=ipns_name_hash, read_only=True
+    )
+    return xr.open_zarr(store=hamt_store, chunks=None)
 
 
 def get_metadata_by_key(key: str) -> dict:
@@ -169,25 +216,37 @@ def get_metadata_by_key(key: str) -> dict:
     return _get_single_metadata(ipfs_hash)
 
 
-def get_heads() -> typing.Dict[str, str]:
-    """Get datasets available on IPFS node and their most recent CID
-
-    Returns:
-        typing.Dict[str, str]: Dictionary of dataset keys and CID values
-    """
-    r = requests.post(f"{_get_host()}/key/list", params={"decoder": "json"})
-    r.raise_for_status()
-    return {
-        name_dict["Name"]: name_dict["Id"]
-        for name_dict in r.json()["Keys"]
-        if any([span in name_dict["Name"] for span in VALID_TIME_SPANS])
-    }
-
-
 def list_datasets() -> typing.List[str]:
     """List datasets available on IPFS node
 
     Returns:
         typing.List[str]: List of available datasets' keys
     """
-    return list(get_heads().keys())
+    # Try to fetch from endpoint first
+    try:
+        r = requests.get(CID_ENDPOINT, params={"decoder": "json"})
+        r.raise_for_status()
+        json_cid = r.json()  # may raise JSONDecodeError if malformed
+
+        # Update the local cache if remote data differs
+        update_cache_if_changed(json_cid)
+        return list(json_cid.keys())
+
+    except (requests.RequestException, json.JSONDecodeError):
+        # Fallback to local cache if endpoint is unreachable or JSON is malformed
+        cache_file = os.path.join(os.path.dirname(__file__), "cids.json")
+        if os.path.exists(cache_file):
+            try:
+                with open(cache_file, "r") as f:
+                    json_cid = json.load(f)  # can raise JSONDecodeError
+                return list(json_cid.keys())
+            except json.JSONDecodeError as err:
+                # local file is corrupt or empty
+                raise RuntimeError(
+                    "Failed to retrieve dataset list from endpoint or local cache."
+                ) from err
+
+    # If both the endpoint and local file fail, raise an error
+    raise RuntimeError(
+        "Failed to retrieve dataset list from endpoint or local cache."
+    ) from None

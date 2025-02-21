@@ -137,7 +137,9 @@ class GeotemporalData:
         data = self.data.sel(forecast_reference_time=forecast_reference_time)
         # Set time to equal the forecast time, not the forecast reference time.
         # Assumes only one forecast reference time is returned
-        data = data.assign_coords(step=data.forecast_reference_time.values + data.step.values)
+        data = data.assign_coords(
+            step=data.forecast_reference_time.values + data.step.values
+        )
         # Remove forecast reference hour
         data = data.squeeze().drop_vars("forecast_reference_time")
         # Make forecasted data the time dimension
@@ -157,18 +159,21 @@ class GeotemporalData:
             xr.Dataset: 3D Xarray dataset with the time dimension reindexed to include hours
                 not forecasted
         """
-        trange = pd.date_range(start=self.data.time[0].values, end=self.data.time[-1].values, freq="1h")
+        trange = pd.date_range(
+            start=self.data.time[0].values, end=self.data.time[-1].values, freq="1h"
+        )
         return self._new(self.data.reindex(time=trange))
 
-    def point(self, lat: float, lon: float, snap_to_grid: bool = True) -> "GeotemporalData":
+    def point(
+        self, latitude: float, longitude: float, snap_to_grid: bool = True
+    ) -> "GeotemporalData":
         """Gets a dataset corresponding to the full time series for a single point
 
         Parameters
         ----------
-
-        lat: float
+        latitude: float
             Latitude coordinate
-        lon: float
+        longitude: float
             Longitude coordinate
         snap_to_grid: bool, optional
             When ``True``, find nearest point to lat, lon in dataset. When ``False``,
@@ -180,13 +185,21 @@ class GeotemporalData:
             New dataset restricted to single point
         """
         if snap_to_grid:
-            data = self.data.sel(latitude=lat, longitude=lon, method="nearest")
-
+            data = self.data.sel(
+                latitude=latitude, longitude=longitude, method="nearest"
+            )
         else:
             try:
-                data = self.data.sel(latitude=lat, longitude=lon, method="nearest", tolerance=10e-5)
+                data = self.data.sel(
+                    latitude=latitude,
+                    longitude=longitude,
+                    method="nearest",
+                    tolerance=10e-5,
+                )
             except KeyError:
-                raise errors.NoDataFoundError("User requested not to snap_to_grid, but exact coord not in dataset")
+                raise errors.NoDataFoundError(
+                    "User requested not to snap_to_grid, but exact coord not in dataset"
+                )
 
         return self._new(data)
 
@@ -204,7 +217,9 @@ class GeotemporalData:
             data = self.data.sel(latitude=lats, longitude=lons, method="nearest")
         else:
             try:
-                data = self.data.sel(latitude=lats, longitude=lons, method="nearest", tolerance=10e-5)
+                data = self.data.sel(
+                    latitude=lats, longitude=lons, method="nearest", tolerance=10e-5
+                )
             except KeyError:
                 raise errors.NoDataFoundError(
                     "User requested not to snap_to_grid, but at least one coord not in dataset"
@@ -304,11 +319,13 @@ class GeotemporalData:
         # If the polygon(s) are collectively smaller than the size of one grid cell,
         # clipping will return no data In this case return data from the grid cell nearest
         # to the center of the polygon
-        if self.data.attrs["spatial resolution"] ** 2 > polygons_mask.unary_union().area:
+        if self.data.attrs["spatial resolution"] ** 2 > polygons_mask.union_all().area:
             return self.reduce_polygon_to_point(polygons_mask)
 
         # return clipped data as normal if the polygons are large enough
-        self.data.rio.set_spatial_dims(x_dim="longitude", y_dim="latitude", inplace=True)
+        self.data.rio.set_spatial_dims(
+            x_dim="longitude", y_dim="latitude", inplace=True
+        )
         self.data.rio.write_crs("epsg:4326", inplace=True)
         mask = gpd.geoseries.GeoSeries(polygons_mask).set_crs(epsg_crs).to_crs(4326)
         min_lon, min_lat, max_lon, max_lat = mask.total_bounds
@@ -325,7 +342,9 @@ class GeotemporalData:
 
         return self._new(shaped_ds)
 
-    def time_range(self, start_time: datetime.datetime, end_time: datetime.datetime) -> "GeotemporalData":
+    def time_range(
+        self, start_time: datetime.datetime, end_time: datetime.datetime
+    ) -> "GeotemporalData":
         """Select data within a contiguous time range.
 
         Can be combined with spatial selectors defined above
@@ -346,7 +365,9 @@ class GeotemporalData:
         data = self.data.sel(time=slice(start_time, end_time))
         return self._new(data)
 
-    def reduce_polygon_to_point(self, polygons_mask: gpd.array.GeometryArray) -> "GeotemporalData":
+    def reduce_polygon_to_point(
+        self, polygons_mask: gpd.array.GeometryArray
+    ) -> "GeotemporalData":
         """Reduce data to a representative point
 
         Reduce data to a representative point approximately at the center of an arbitrary
@@ -499,7 +520,9 @@ class GeotemporalData:
         try:
             if self.data.update_in_progress and not self.data.update_is_append_only:
                 update_date_range = self.data.attrs["update_date_range"]
-                self.data.attrs["updating date range"] = f"{update_date_range[0]}-{update_date_range[1]}"
+                self.data.attrs["updating date range"] = (
+                    f"{update_date_range[0]}-{update_date_range[1]}"
+                )
         except AttributeError:
             pass
 
@@ -527,12 +550,18 @@ class GeotemporalData:
         vals = self.data_var.values
         ret_dict = {}
         dimensions = []
-        ret_dict["unit of measurement"] = self.data.attrs["unit of measurement"]
+        ret_dict["units"] = self.data_var.attrs.get("units", "unknown")
         if "time" in self.data:
-            ret_dict["times"] = np.datetime_as_string(self.data.time.values, unit="s").flatten().tolist()
+            ret_dict["times"] = (
+                np.datetime_as_string(self.data.time.values, unit="s")
+                .flatten()
+                .tolist()
+            )
             dimensions.append("time")
         if "point" in self.data.dims:
-            ret_dict["points"] = list(zip(self.data.latitude.values, self.data.longitude.values))
+            ret_dict["points"] = list(
+                zip(self.data.latitude.values, self.data.longitude.values)
+            )
             ret_dict["point_coords_order"] = ["latitude", "longitude"]
             dimensions.insert(0, "point")
             ret_dict["data"] = np.where(~np.isfinite(vals), None, vals).T.tolist()

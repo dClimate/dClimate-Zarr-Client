@@ -27,11 +27,15 @@ class TestZarrMetadata:
     @pytest.fixture()
     def s3_fs(self, mocker):
         s3fs_mock = mocker.Mock()
-        mocker.patch("dclimate_zarr_client.zarr_metadata.get_s3_fs", return_value=s3fs_mock)
+        mocker.patch(
+            "dclimate_zarr_client.zarr_metadata.get_s3_fs", return_value=s3fs_mock
+        )
         return s3fs_mock
 
     class TestGetCollectionsFunction:
-        def test__given_an_invalid_bucket_name__then__an_error_is_thrown(self, mocker, s3_fs):
+        def test__given_an_invalid_bucket_name__then__an_error_is_thrown(
+            self, mocker, s3_fs
+        ):
             s3_fs.exists = mocker.Mock(return_value=False)
             invalid_bucket_name = "invalid_bucket_name"
 
@@ -40,7 +44,9 @@ class TestZarrMetadata:
 
             assert str(e.value) == f"Bucket {invalid_bucket_name} does not exist"
 
-        def test__given_a_valid_bucket_name_and_bucket_contains_collections__then__they_are_returned(self, mocker):
+        def test__given_a_valid_bucket_name_and_bucket_contains_collections__then__they_are_returned(
+            self, mocker
+        ):
             mocker.patch(
                 "dclimate_zarr_client.zarr_metadata.get_catalog_metadata",
                 return_value=json.loads(open(METADATA / "Data Catalog.json").read()),
@@ -67,7 +73,9 @@ class TestZarrMetadata:
         ):
             mocker.patch(
                 "dclimate_zarr_client.zarr_metadata.get_catalog_metadata",
-                return_value=json.loads(open(METADATA / "Empty Data Catalog.json").read()),
+                return_value=json.loads(
+                    open(METADATA / "Empty Data Catalog.json").read()
+                ),
             )
             bucket_name = "zarr-dev"
 
@@ -76,7 +84,9 @@ class TestZarrMetadata:
             assert collections == []
 
     class TestGetCollectionMetadata:
-        def test_given_an_invalid_bucket_name_or_collection_name__then__an_error_is_thrown(self, mocker, s3_fs):
+        def test_given_an_invalid_bucket_name_or_collection_name__then__an_error_is_thrown(
+            self, mocker, s3_fs
+        ):
             s3_fs.exists = mocker.Mock(return_value=False)
             invalid_bucket_name = "invalid_bucket_name"
 
@@ -98,7 +108,9 @@ class TestZarrMetadata:
             assert result == json.loads(fake_collection_metadata)
 
     class TestGetCollectionDatasetsFunction:
-        def test_given_an_invalid_bucket_name__then__an_error_is_thrown(self, mocker, s3_fs):
+        def test_given_an_invalid_bucket_name__then__an_error_is_thrown(
+            self, mocker, s3_fs
+        ):
             s3_fs.exists = mocker.Mock(return_value=False)
             invalid_bucket_name = "invalid_bucket_name"
             collection_name = "CHIRPS"
@@ -107,7 +119,9 @@ class TestZarrMetadata:
 
             assert str(e.value) == f"Bucket {invalid_bucket_name} does not exist"
 
-        def test_given_an_invalid_collection_name__then__an_error_is_thrown(self, mocker, s3_fs):
+        def test_given_an_invalid_collection_name__then__an_error_is_thrown(
+            self, mocker, s3_fs
+        ):
             s3_fs.exists = mocker.Mock(side_effect=[True, False])
             bucket_name = "zarr-dev"
             invalid_collection_name = "invalid"
@@ -119,7 +133,9 @@ class TestZarrMetadata:
                 == f"Path {bucket_name}/metadata/collections/{invalid_collection_name}.json does not exist"
             )
 
-        def test_given_valid_bucket_and_collection_names__then__datasets_are_returned(self, mocker, s3_fs):
+        def test_given_valid_bucket_and_collection_names__then__datasets_are_returned(
+            self, mocker, s3_fs
+        ):
             with open(METADATA / "collections/CHIRPS.json", "rb") as file:
                 s3_fs.cat_file = mocker.Mock(return_value=file.read())
             bucket_name = "zarr-dev"
@@ -184,7 +200,9 @@ class TestZarrMetadata:
             )
 
     class TestGetDatasetMetadata:
-        def test_given_an_invalid_bucket_name__then__an_error_is_thrown(self, mocker, s3_fs):
+        def test_given_an_invalid_bucket_name__then__an_error_is_thrown(
+            self, mocker, s3_fs
+        ):
             s3_fs.exists = mocker.Mock(return_value=False)
             invalid_bucket_name = "invalid_bucket_name"
             dataset_name = "chirps_final_05-daily"
@@ -194,7 +212,9 @@ class TestZarrMetadata:
 
             assert str(e.value) == f"Bucket {invalid_bucket_name} does not exist"
 
-        def test_given_an_invalid_dataset_name__then__an_error_is_thrown(self, mocker, s3_fs):
+        def test_given_an_invalid_dataset_name__then__an_error_is_thrown(
+            self, mocker, s3_fs
+        ):
             s3_fs.exists = mocker.Mock(side_effect=[True, False])
             bucket_name = "zarr-dev"
             invalid_dataset_name = "invalid"
@@ -202,7 +222,10 @@ class TestZarrMetadata:
             with pytest.raises(PathNotFoundError) as e:
                 get_dataset_metadata(bucket_name, invalid_dataset_name)
 
-            assert str(e.value) == f"Path {bucket_name}/metadata/datasets/{invalid_dataset_name}.json does not exist"
+            assert (
+                str(e.value)
+                == f"Path {bucket_name}/metadata/datasets/{invalid_dataset_name}.json does not exist"
+            )
 
         def test_given_a_valid_bucket_name_and_dataset_name__then__metadata_content_file_is_returned(
             self, mocker, s3_fs
@@ -217,7 +240,9 @@ class TestZarrMetadata:
             assert result == json.loads(fake_dataset_metadata)
 
     class TestGetCatalogMetadata:
-        def test_given_an_invalid_bucket_name__then__an_error_is_thrown(self, mocker, s3_fs):
+        def test_given_an_invalid_bucket_name__then__an_error_is_thrown(
+            self, mocker, s3_fs
+        ):
             s3_fs.exists = mocker.Mock(return_value=False)
             invalid_bucket_name = "invalid_bucket_name"
 
@@ -226,17 +251,21 @@ class TestZarrMetadata:
 
             assert str(e.value) == f"Bucket {invalid_bucket_name} does not exist"
 
-        def test_if_there_is_not_metadata_folder__then__an_error_is_thrown(self, mocker, s3_fs):
+        def test_if_there_is_not_metadata_folder__then__an_error_is_thrown(
+            self, mocker, s3_fs
+        ):
             s3_fs.exists = mocker.Mock(side_effect=[True, False])
             bucket_name = "zarr-dev"
-            invalid_dataset_name = "invalid"
+            # invalid_dataset_name = "invalid"
 
             with pytest.raises(PathNotFoundError) as e:
                 get_catalog_metadata(bucket_name)
 
             assert str(e.value) == f"Path {bucket_name}/metadata does not exist"
 
-        def test_if_there_is_more_than_one_data_catalog_object__then__an_error_is_thrown(self, mocker, s3_fs):
+        def test_if_there_is_more_than_one_data_catalog_object__then__an_error_is_thrown(
+            self, mocker, s3_fs
+        ):
             fake_metadata_folder_content = [
                 "zarr-dev/metadata/My Organization Data Catalog.json",
                 "zarr-dev/metadata/dClimate Data Catalog - test.json",
@@ -249,9 +278,11 @@ class TestZarrMetadata:
             with pytest.raises(ZarrClientError) as e:
                 get_catalog_metadata(bucket_name)
 
-            assert str(e.value) == f"There is more than one Data Catalog object"
+            assert str(e.value) == "There is more than one Data Catalog object"
 
-        def test__if_there_is_no_data_catalog_object__then__an_error_is_thrown(self, mocker, s3_fs):
+        def test__if_there_is_no_data_catalog_object__then__an_error_is_thrown(
+            self, mocker, s3_fs
+        ):
             fake_metadata_folder_content = [
                 "zarr-dev/metadata/collections",
                 "zarr-dev/metadata/datasets",
@@ -262,9 +293,11 @@ class TestZarrMetadata:
             with pytest.raises(ZarrClientError) as e:
                 get_catalog_metadata(bucket_name)
 
-            assert str(e.value) == f"There is not any Data Catalog object"
+            assert str(e.value) == "There is not any Data Catalog object"
 
-        def test__if_there_exactly_one_data_catalog_object_then__its_content_is_returned(self, mocker, s3_fs):
+        def test__if_there_exactly_one_data_catalog_object_then__its_content_is_returned(
+            self, mocker, s3_fs
+        ):
             fake_metadata_folder_content = [
                 "zarr-dev/metadata/My Organization Data Catalog.json",
                 "zarr-dev/metadata/collections",
@@ -276,7 +309,9 @@ class TestZarrMetadata:
             data_catalog_object_content = mocker.Mock()
             data_catalog_object_content_as_dict = mocker.Mock()
             s3_fs.cat_file = mocker.Mock(return_value=data_catalog_object_content)
-            fake_json_loads = mocker.patch("json.loads", return_value=data_catalog_object_content_as_dict)
+            fake_json_loads = mocker.patch(
+                "json.loads", return_value=data_catalog_object_content_as_dict
+            )
 
             result = get_catalog_metadata(bucket_name)
 
